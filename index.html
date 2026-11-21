@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f1012">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pad 16 Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0f1012; --chassis:#2b2c2f; --chassis-hi:#3a3b3f; --chassis-lo:#1c1d1f;
+  --key:#3a3b3f; --key-hi:#4a4b50;
+  --ink:#f1eee4; --ink-dim:#b8b5a9;
+  --rubber-hi:#2f3033; --rubber-lo:#1a1b1d;
+  --led:#ff9a1f; --ui:#ffb02e; --rec:#ff3b30;
+  --dock:64px;
+  --tex:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --rub:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.4px) 0 0/5px 5px;
+  --btn-ink:var(--ink);--btn-dim:var(--ink-dim);--pad-ink:var(--ink-dim);--pad-ink2:#e6e3d8;--p-ink:var(--ink);--p-dim:var(--ink-dim);
+  --panel:#1c1d20;--field:#101113;--dock-a:#26272a;--dock-b:#17181a;
+  --f-label:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-lcd:'VT323',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-label);font-size:17px;
+  min-height:100vh;min-height:100dvh;
+  padding:calc(max(10px,env(safe-area-inset-top)) + var(--tg-safe-area-inset-top,0px) + var(--tg-content-safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right)) calc(var(--dock) + env(safe-area-inset-bottom) + var(--tg-safe-area-inset-bottom,0px) + 14px) max(10px,env(safe-area-inset-left));
+  -webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation;
+}
+body.sheet-open{padding-bottom:calc(var(--dock) + env(safe-area-inset-bottom) + 52vh)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid #ffd27a;outline-offset:2px}
+.btn,.pad,.tab,.sw button{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+
+/* chassis with fine texture */
+.mpc{
+  position:relative;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:14px;border-radius:16px;
+  background:
+    var(--tex),
+    linear-gradient(180deg,var(--chassis-hi) 0,var(--chassis) 26%,var(--chassis-lo) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 24px 48px rgba(0,0,0,.55),0 0 0 1px #0b0b0c;
+}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.brand{display:flex;align-items:baseline;gap:8px;flex:none}
+.brand b{font-size:26px;font-weight:700;letter-spacing:.08em;line-height:1}
+.brand span{font-size:13px;letter-spacing:.28em;color:var(--ink-dim)}
+.top .master{flex:1 1 150px;min-width:0}
+.btn{
+  appearance:none;border:0;cursor:pointer;min-height:44px;padding:6px 14px;border-radius:6px;
+  background:linear-gradient(180deg,var(--key-hi),var(--key));
+  box-shadow:0 3px 0 #0b0b0c,0 4px 8px #0007,inset 0 1px 0 rgba(255,255,255,.14);
+  font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;position:relative;color:var(--btn-ink);
+  transition:transform .04s,box-shadow .04s;
+}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #0b0b0c,0 2px 4px #0007,inset 0 1px 0 rgba(255,255,255,.1)}
+.btn[aria-pressed="true"]{color:#fff;box-shadow:0 3px 0 #0b0b0c,0 4px 8px #0007,inset 0 1px 0 rgba(255,255,255,.14),inset 0 -3px 0 var(--ui)}
+.btn.rec[aria-pressed="true"]{box-shadow:0 3px 0 #0b0b0c,0 4px 8px #0007,inset 0 -3px 0 var(--rec);color:#ffd9d6}
+.btn.big{min-height:56px;font-size:20px;width:100%}
+.btn.stop{background:linear-gradient(180deg,#6a2b27,#4a1d1a)}
+
+/* banks */
+.banks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.banks .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:56px;padding:4px 2px;gap:0;line-height:1.05}
+.banks .bl{font-size:22px;font-weight:700}
+.banks .bn{font-size:11.5px;letter-spacing:.14em;color:var(--btn-dim)}
+.bled{position:absolute;top:7px;right:8px;width:9px;height:9px;border-radius:50%;background:#3b2b12;box-shadow:inset 0 0 0 1px #0009}
+.btn[aria-pressed="true"] .bled{background:var(--ui);box-shadow:0 0 9px 2px var(--ui)}
+.bled.busy{background:#46dc8c!important;box-shadow:0 0 9px 2px #46dc8c!important;animation:blink .7s infinite}
+@keyframes blink{50%{opacity:.35}}
+
+/* deck */
+.deck{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-areas:"lcd" "pads" "ctl"}
+
+/* LCD */
+.lcd{
+  grid-area:lcd;position:relative;overflow:hidden;border-radius:8px;padding:8px 12px 10px;
+  --lcd-bg:#a8b88a;--lcd-fg:#1d2813;--lcd-glow:transparent;
+  background:var(--lcd-bg);color:var(--lcd-fg);text-shadow:0 0 7px var(--lcd-glow);
+  font-family:var(--f-lcd);font-size:24px;line-height:1.05;
+  box-shadow:inset 0 2px 12px #0007,0 0 0 4px #151618,0 1px 0 4px rgba(255,255,255,.07);
+}
+.lcd[data-lcd="amber"]{--lcd-bg:#140c03;--lcd-fg:#ffb02e;--lcd-glow:#ff8a1f99}
+.lcd[data-lcd="ice"]{--lcd-bg:#08182a;--lcd-fg:#86d9ff;--lcd-glow:#3fb6ff88}
+.lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 1px,transparent 1px 3px)}
+.lrow{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:14px;row-gap:2px}
+.lrow.head{flex-wrap:nowrap;border-bottom:2px solid currentColor;padding-bottom:3px;margin-bottom:4px;gap:12px}
+#lcdName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lcdState{white-space:nowrap}
+#lcdState.rec{animation:blink .8s infinite}
+.wave{display:block;width:100%;height:64px;margin:2px 0 4px}
+.lrow span{white-space:nowrap}
+
+/* pads */
+.pads{grid-area:pads;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-content:start;width:100%;margin:0 auto}
+.pad{
+  appearance:none;border:0;padding:0;margin:0;aspect-ratio:1;border-radius:10px;position:relative;cursor:pointer;
+  touch-action:none;color:var(--pad-ink);
+  background:var(--rub),linear-gradient(180deg,var(--rubber-hi),var(--rubber-lo));
+  box-shadow:0 5px 0 #0a0a0b,0 7px 12px #000a,inset 0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px #0008;
+  transition:transform .04s,box-shadow .04s,filter .1s;
+}
+.pad::before{content:"";position:absolute;inset:7px;border-radius:6px;background:var(--led);opacity:0;transition:opacity .16s,box-shadow .16s}
+.pad.loaded{color:var(--pad-ink2)}
+.pad.loaded::before{opacity:.22}
+.pad.on::before{opacity:.9;box-shadow:0 0 20px 3px var(--led)}
+.pad.on.loopy::before{animation:pulse .9s ease-in-out infinite}
+.pad.hit::before{opacity:1;box-shadow:0 0 34px 8px var(--led);transition:none}
+.pad.hit,.pad.on{color:#150e05}
+.pad.hit{filter:brightness(1.18)}
+@keyframes pulse{50%{opacity:.45;box-shadow:0 0 8px 1px var(--led)}}
+.pad.down{transform:translateY(4px) scale(.985);box-shadow:0 1px 0 #0a0a0b,0 2px 5px #000a,inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px #0008}
+.pad.sel{outline:2px solid rgba(255,255,255,.7);outline-offset:3px}
+.pad.drop{outline:2px dashed var(--ui);outline-offset:3px}
+.ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.ring rect{fill:none;stroke:#fff;stroke-width:3.5;stroke-dasharray:100;stroke-dashoffset:100;stroke-linecap:round;filter:drop-shadow(0 0 2px var(--led))}
+.pad .num{position:absolute;left:9px;top:7px;z-index:1;font-size:15px;font-weight:700;letter-spacing:.04em}
+.pad .key{position:absolute;right:9px;top:8px;z-index:1;font-size:13px;font-weight:600;opacity:.7}
+.pad .nm{
+  position:absolute;left:8px;right:8px;bottom:7px;z-index:1;text-align:left;font-size:15px;font-weight:700;line-height:1;letter-spacing:.04em;
+  text-transform:uppercase;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+@media (hover:none){.pad .key{display:none}}
+
+/* dock + sheet (phone: bottom sheet) */
+.ctl{grid-area:ctl;display:block}
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  padding:8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+  background:linear-gradient(var(--dock-a),var(--dock-b));border-top:1px solid #0b0b0c;box-shadow:0 -8px 20px #0009;
+}
+.tab{padding:6px 2px;min-height:48px;font-size:15px;letter-spacing:.08em;position:relative}
+.tab.live::after{content:"";position:absolute;top:6px;right:7px;width:9px;height:9px;border-radius:50%;background:var(--rec);box-shadow:0 0 8px 2px var(--rec);animation:blink .7s infinite}
+.sheet{
+  position:fixed;left:0;right:0;bottom:calc(var(--dock) + env(safe-area-inset-bottom));z-index:20;max-height:52vh;overflow:auto;
+  display:none;padding:16px max(16px,env(safe-area-inset-left)) 18px;background:var(--panel);color:var(--p-ink);border-radius:18px 18px 0 0;
+  box-shadow:0 -12px 30px #000b,inset 0 1px 0 rgba(255,255,255,.1);-webkit-overflow-scrolling:touch;
+}
+.sheet.open{display:block;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+.pane{display:grid;gap:16px}
+.pane[hidden]{display:none}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.lab{font-size:13px;font-weight:600;letter-spacing:.14em;color:var(--ink-dim);text-transform:uppercase}
+.field .lab{display:block;margin-bottom:6px}
+.namein{
+  flex:1;min-width:0;height:46px;padding:0 12px;border:0;border-radius:6px;background:var(--field);
+  box-shadow:inset 0 2px 5px #000b,0 0 0 1px #3a3b3f;font-size:19px;letter-spacing:.06em;text-transform:uppercase
+}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg .btn{padding:6px 14px}
+.sw{display:flex;gap:12px;flex-wrap:wrap}
+.sw button{width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;background:var(--c);box-shadow:inset 0 -3px 5px rgba(0,0,0,.35),0 2px 4px #0009}
+.sw button[aria-pressed="true"]{box-shadow:inset 0 -3px 5px rgba(0,0,0,.35),0 0 0 3px var(--panel),0 0 0 5px #fff}
+.info{margin:0;font-size:15px;line-height:1.4;color:var(--p-dim)}
+.info b{color:var(--p-ink)}
+.sheet .lab{color:var(--p-dim)}
+.trim{display:block;width:100%;height:112px;border-radius:8px;background:#0d0e10;box-shadow:inset 0 2px 6px #000c,0 0 0 1px #3a3b3f;touch-action:none;cursor:ew-resize}
+.read{font-family:var(--f-lcd);font-size:22px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.meter{height:14px;border-radius:7px;background:#0d0e10;box-shadow:inset 0 2px 4px #000c;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#46dc8c,#f2d63a 70%,#ff3b30)}
+.dl{display:none;text-align:center;padding:12px;border-radius:8px;background:#26402e;color:#d8ffe4;text-decoration:none;font-weight:700;letter-spacing:.08em}
+.dl.show{display:block}
+
+/* sliders */
+.sl{display:grid;grid-template-columns:62px minmax(0,1fr) 52px;align-items:center;gap:10px}
+.sl output{font-family:var(--f-lcd);font-size:22px;text-align:right;line-height:1}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:46px;margin:0;background:transparent;touch-action:pan-y;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--ui) var(--v,50%),#0d0e10 var(--v,50%));box-shadow:inset 0 2px 4px #000c,0 0 0 1px #3a3b3f}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-12px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 28%,#66676c,#232427 72%);box-shadow:0 3px 6px #000a,inset 0 1px 0 rgba(255,255,255,.22),0 0 0 2px #0b0b0c}
+input[type=range]::-moz-range-track{height:12px;border-radius:6px;background:#0d0e10}
+input[type=range]::-moz-range-progress{height:12px;border-radius:6px;background:var(--ui)}
+input[type=range]::-moz-range-thumb{width:34px;height:34px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 28%,#66676c,#232427 72%);box-shadow:0 3px 6px #000a,0 0 0 2px #0b0b0c}
+
+.hint{margin:0;font-size:15px;line-height:1.45;color:var(--ink-dim);letter-spacing:.02em}
+#debug{position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#0f0;font:12px/1.35 ui-monospace,Menlo,monospace;padding:8px 12px;max-height:30vh;overflow:auto;display:none;border-bottom:1px solid #333}
+#debug.show{display:block}#debug .err{color:#f66}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* desktop / tablet: LCD + panel on the left, pads on the right */
+@media (min-width:860px) and (min-height:541px){
+  body,body.sheet-open{padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .deck{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"lcd pads" "ctl pads";align-items:start}
+  .pads{max-width:calc(100vh - 150px);max-width:calc(100dvh - 150px);min-width:260px}
+  .ctl{display:grid;gap:10px}
+  .dock{position:static;padding:0;background:none;border:0;box-shadow:none}
+  .sheet,.sheet.open{position:static;display:block;max-height:none;overflow:visible;padding:14px;border-radius:10px;background:var(--panel);box-shadow:inset 0 0 0 1px #0007;animation:none}
+  .wave{height:84px}
+}
+/* phone in landscape: pads fill the height on the right, the sheet covers the left column */
+@media (orientation:landscape) and (max-height:540px){
+  body,body.sheet-open{padding-bottom:10px;padding-top:max(8px,env(safe-area-inset-top))}
+  .mpc{--pw:calc(100vh - 40px);--pw:calc(100dvh - 40px);--lw:calc(100vw - var(--pw) - 60px);grid-template-columns:minmax(0,1fr) var(--pw);grid-template-areas:"top pads" "banks pads" "lcd pads" "ctl pads";grid-template-rows:auto auto auto 1fr;padding:10px;gap:8px 12px}
+  .deck{display:contents}
+  .top{grid-area:top}.banks{grid-area:banks}
+  .banks .btn{min-height:44px}
+  .pads{align-self:start}
+  .wave{height:46px}
+  .pad .nm{font-size:12.5px}
+  .brand span{display:none}
+  .dock{width:var(--lw);left:max(10px,env(safe-area-inset-left));right:auto;bottom:8px;padding:0;background:none;border:0;box-shadow:none}
+  .sheet{left:max(10px,env(safe-area-inset-left));right:auto;top:8px;bottom:64px;width:var(--lw);max-height:none;border-radius:12px}
+}
+@media (max-width:480px){.brand span{display:none}.top .master{flex:1 1 calc(100% - 120px)}.top>.btn{flex:1 1 72px;padding:6px 8px}}
+@media (max-width:380px){.sl{grid-template-columns:52px minmax(0,1fr) 46px}.pad .nm{font-size:14px}}
+
+/* ---------- skins: <html data-skin="..."> redefines the variables, a few add decoration ---------- */
+.screw{position:absolute;width:12px;height:12px;border-radius:50%;pointer-events:none;z-index:3;background:radial-gradient(circle at 35% 30%,#6b6c71,#1b1c1e 70%);box-shadow:0 1px 2px #000a,inset 0 0 0 1px #0007}
+.screw::after{content:"";position:absolute;left:2px;right:2px;top:50%;height:2px;margin-top:-1px;background:#0c0d0e;border-radius:1px;transform:rotate(35deg)}
+.screw.tl{top:5px;left:5px}.screw.tr{top:5px;right:5px}.screw.tr::after{transform:rotate(-25deg)}
+.screw.bl{bottom:5px;left:5px}.screw.bl::after{transform:rotate(80deg)}.screw.br{bottom:5px;right:5px}.screw.br::after{transform:rotate(10deg)}
+
+/* LIME CARBON */
+:root[data-skin="lime"]{
+  --bg:#060706;--chassis:#161914;--chassis-hi:#1f231b;--chassis-lo:#0b0c09;--key:#20251b;--key-hi:#2b3224;--ink:#eaf7d4;--ink-dim:#97a77d;
+  --rubber-hi:#1d201a;--rubber-lo:#0e100c;--ui:#b6ff1a;--field:#070806;--panel:#10130d;--dock-a:#1b2016;--dock-b:#0b0c09;
+  --tex:linear-gradient(45deg,#0000 25%,rgba(255,255,255,.045) 25% 50%,#0000 50% 75%,rgba(255,255,255,.045) 75%) 0 0/8px 8px,linear-gradient(-45deg,#0000 25%,rgba(0,0,0,.28) 25% 50%,#0000 50% 75%,rgba(0,0,0,.28) 75%) 0 0/8px 8px;
+  --rub:repeating-linear-gradient(135deg,rgba(182,255,26,.06) 0 2px,transparent 2px 6px);
+}
+:root[data-skin="lime"] .mpc{box-shadow:inset 0 0 0 1px rgba(182,255,26,.14),0 24px 48px rgba(0,0,0,.6),0 0 0 1px #000,0 0 28px rgba(182,255,26,.08)}
+:root[data-skin="lime"] .brand b{color:var(--ui);text-shadow:0 0 12px rgba(182,255,26,.55),0 -1px 0 #000}
+:root[data-skin="lime"] .top{padding-bottom:16px}
+:root[data-skin="lime"] .top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;border-radius:2px;background:repeating-linear-gradient(-45deg,var(--ui) 0 7px,#0b0c09 7px 14px);opacity:.92}
+:root[data-skin="lime"] .screw{background:radial-gradient(circle at 35% 30%,#4a5340,#14160f 70%)}
+
+/* WOOD & ORANGE */
+:root[data-skin="orange"]{
+  --bg:#1c1c1e;--chassis:#585a5f;--chassis-hi:#6a6c72;--chassis-lo:#43454a;--key:#74767c;--key-hi:#85888e;--ink:#f6f3ec;--ink-dim:#d9d6cd;
+  --rubber-hi:#34363a;--rubber-lo:#222326;--ui:#ff7a1a;--field:#2b2c2f;--panel:#2f3135;--dock-a:#5d5f64;--dock-b:#43454a;--p-dim:#cfccc2;
+}
+:root[data-skin="orange"] .mpc{padding-inline:26px;background:
+  repeating-linear-gradient(0deg,rgba(38,16,5,.42) 0 1px,transparent 1px 5px,rgba(255,205,150,.08) 5px 6px,transparent 6px 12px) left top/14px 100% no-repeat,
+  repeating-linear-gradient(0deg,rgba(38,16,5,.42) 0 1px,transparent 1px 5px,rgba(255,205,150,.08) 5px 6px,transparent 6px 12px) right top/14px 100% no-repeat,
+  linear-gradient(90deg,#4a2913,#7f4e28 55%,#5d3519) left top/14px 100% no-repeat,
+  linear-gradient(90deg,#5d3519,#7f4e28 45%,#4a2913) right top/14px 100% no-repeat,
+  repeating-linear-gradient(90deg,rgba(255,255,255,.045) 0 1px,rgba(0,0,0,.035) 1px 3px),
+  linear-gradient(180deg,var(--chassis-hi),var(--chassis) 28%,var(--chassis-lo))}
+:root[data-skin="orange"] .brand b{color:#fff2e2}
+:root[data-skin="orange"] .screw{background:radial-gradient(circle at 35% 30%,#f0cd85,#8a6420 70%)}
+:root[data-skin="orange"] .screw.tl,:root[data-skin="orange"] .screw.bl{left:19px}
+:root[data-skin="orange"] .screw.tr,:root[data-skin="orange"] .screw.br{right:19px}
+
+/* YELLOW BLACK */
+:root[data-skin="yellow"]{
+  --bg:#0f0f0f;--chassis:#f0c000;--chassis-hi:#ffd62a;--chassis-lo:#c79a00;--key:#1b1b1c;--key-hi:#2b2b2d;--ink:#161616;--ink-dim:#4a3d00;
+  --rubber-hi:#2a2a2b;--rubber-lo:#141415;--ui:#ffd62a;--field:#161616;--panel:#1b1b1c;--dock-a:#262627;--dock-b:#111;
+  --btn-ink:#f4f1e6;--btn-dim:#b8b5a9;--pad-ink:#d9d2a6;--pad-ink2:#f0e9c0;--p-ink:#f4f1e6;--p-dim:#b8b5a9;
+  --tex:repeating-linear-gradient(45deg,rgba(0,0,0,.05) 0 2px,transparent 2px 6px);
+}
+:root[data-skin="yellow"] .mpc{box-shadow:inset 0 0 0 3px #111,0 24px 48px rgba(0,0,0,.6),0 0 0 1px #000}
+:root[data-skin="yellow"] .top{padding-bottom:16px}
+:root[data-skin="yellow"] .top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:repeating-linear-gradient(-45deg,#111 0 8px,transparent 8px 16px)}
+:root[data-skin="yellow"] .screw{background:radial-gradient(circle at 35% 30%,#555,#0a0a0a 70%)}
+
+/* RED & BAMBOO */
+:root[data-skin="bamboo"]{
+  --bg:#1a0806;--chassis:#a8261d;--chassis-hi:#c63a2e;--chassis-lo:#6d130e;--key:#3b1d12;--key-hi:#58301e;--ink:#fde8bd;--ink-dim:#ecc884;
+  --rubber-hi:#4a2417;--rubber-lo:#2a130c;--ui:#f4c24c;--field:#2a130c;--panel:#2a130c;--dock-a:#4a1b14;--dock-b:#2a0f0a;--oc:#1b0a06;
+  --rub:radial-gradient(rgba(244,194,76,.12) 1.2px,transparent 1.6px) 0 0/8px 8px;
+}
+:root[data-skin="bamboo"] .btn{box-shadow:0 0 0 2px var(--oc),0 4px 0 var(--oc)}
+:root[data-skin="bamboo"] .btn:active{transform:translateY(3px);box-shadow:0 0 0 2px var(--oc),0 1px 0 var(--oc)}
+:root[data-skin="bamboo"] .btn[aria-pressed="true"]{box-shadow:0 0 0 2px var(--oc),0 4px 0 var(--oc),inset 0 -4px 0 var(--ui)}
+:root[data-skin="bamboo"] .pad{box-shadow:0 0 0 2px var(--oc),0 5px 0 var(--oc)}
+:root[data-skin="bamboo"] .pad.down{box-shadow:0 0 0 2px var(--oc),0 1px 0 var(--oc)}
+:root[data-skin="bamboo"] .lcd{box-shadow:0 0 0 3px var(--oc),0 5px 0 3px var(--oc)}
+:root[data-skin="bamboo"] .brand b{color:var(--ui)}
+:root[data-skin="bamboo"] .mpc{padding-inline:26px;box-shadow:0 0 0 4px var(--oc),0 22px 40px rgba(0,0,0,.6);background:
+  repeating-linear-gradient(0deg,#2c4010 0 3px,transparent 3px 84px) left top/14px 100% no-repeat,
+  repeating-linear-gradient(0deg,#2c4010 0 3px,transparent 3px 84px) right top/14px 100% no-repeat,
+  linear-gradient(90deg,#4a6a1a,#a3c850 40%,#58781f) left top/14px 100% no-repeat,
+  linear-gradient(90deg,#58781f,#a3c850 60%,#4a6a1a) right top/14px 100% no-repeat,
+  radial-gradient(circle at 50% 0,rgba(255,200,120,.25),transparent 60%),
+  linear-gradient(180deg,var(--chassis-hi),var(--chassis) 28%,var(--chassis-lo))}
+:root[data-skin="bamboo"] .screw{background:radial-gradient(circle at 35% 30%,#f6d98e,#8a6420 70%)}
+:root[data-skin="bamboo"] .screw.tl,:root[data-skin="bamboo"] .screw.bl{left:19px}
+:root[data-skin="bamboo"] .screw.tr,:root[data-skin="bamboo"] .screw.br{right:19px}
+
+/* ON AIR (studio red) */
+:root[data-skin="onair"]{
+  --bg:#0b0506;--chassis:#241517;--chassis-hi:#35201f;--chassis-lo:#150b0c;--key:#3a2224;--key-hi:#4d2d2f;--ink:#f8ebe6;--ink-dim:#cdb1a9;
+  --rubber-hi:#301b1d;--rubber-lo:#190d0e;--ui:#ff3b30;--field:#12090a;--panel:#190d0f;--dock-a:#2c1819;--dock-b:#150a0b;
+}
+:root[data-skin="onair"] .mpc{box-shadow:inset 0 0 0 1px rgba(255,59,48,.18),0 24px 48px rgba(0,0,0,.65),0 0 0 1px #000,0 0 30px rgba(255,59,48,.1)}
+:root[data-skin="onair"] .brand b{text-shadow:0 0 12px rgba(255,59,48,.5)}
+:root[data-skin="onair"] .brand::after{content:"ON AIR";padding:2px 7px;border-radius:4px;background:#ff3b30;color:#fff;font-size:12px;font-weight:700;letter-spacing:.14em;box-shadow:0 0 10px 2px rgba(255,59,48,.65);animation:blink 2.4s infinite}
+:root[data-skin="onair"] .screw{background:radial-gradient(circle at 35% 30%,#6a4a4a,#1a0d0d 70%)}
+</style>
+</head>
+<body>
+<div id="debug"></div>
+<script>
+try{var sk=localStorage.getItem('pad16r.skin');if(sk)document.documentElement.setAttribute('data-skin',sk);}catch(e){}
+window.onerror=function(m,u,l){var d=document.getElementById('debug');if(d){d.className='show';d.innerHTML+='<div class="err">ERR: '+m+' (line '+l+')</div>';}return false;};
+window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('debug');if(d){d.className='show';d.innerHTML+='<div class="err">PROMISE: '+(e.reason&&e.reason.message||e.reason)+'</div>';}});
+</script>
+<main class="mpc" id="mpc">
+  <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+  <header class="top">
+    <div class="brand"><b>PAD 16</b><span>RADIO</span></div>
+    <label class="sl master" style="grid-template-columns:auto minmax(0,1fr) 46px">
+      <span class="lab">Master</span>
+      <input type="range" id="sMaster" min="0" max="100" step="1" aria-label="Общая громкость">
+      <output id="oMaster">85</output>
+    </label>
+    <button class="btn stop" id="stopAll" type="button">Stop</button>
+    <button class="btn" id="lcdTheme" type="button" title="Цвет дисплея">LCD</button>
+    <button class="btn" id="skinBtn" type="button" title="Тема оформления">Skin 1</button>
+  </header>
+
+  <div class="banks" role="group" aria-label="Банк">
+    <button class="btn" data-bank="0" aria-pressed="true"><i class="bled"></i><span class="bl">A</span><span class="bn">JINGLES</span></button>
+    <button class="btn" data-bank="1" aria-pressed="false"><i class="bled"></i><span class="bl">B</span><span class="bn">REACTIONS</span></button>
+    <button class="btn" data-bank="2" aria-pressed="false"><i class="bled"></i><span class="bl">C</span><span class="bn">NEWS/UTIL</span></button>
+    <button class="btn" data-bank="3" aria-pressed="false"><i class="bled"></i><span class="bl">D</span><span class="bn">BEDS/LOOPS</span></button>
+  </div>
+
+  <div class="deck">
+    <section class="lcd" id="lcd" data-lcd="green" aria-label="Дисплей">
+      <div class="lrow head"><span id="lcdPad">A01</span><span id="lcdName">EMPTY</span><span id="lcdState">READY</span></div>
+      <canvas class="wave" id="wave" aria-hidden="true"></canvas>
+      <div class="lrow"><span id="lcdVol">VOL 080</span><span id="lcdPit">PIT +00</span><span id="lcdMode">ONE SHOT</span><span id="lcdChk">CHK --</span></div>
+      <div class="lrow"><span id="tEl">T 0.00</span><span id="tLen">LEN 0.00</span><span id="tRem">REM 0.00</span></div>
+    </section>
+
+    <section class="pads" id="pads" aria-label="Пэды"></section>
+
+    <section class="ctl" aria-label="Параметры">
+      <nav class="dock" id="dock" aria-label="Панели">
+        <button class="btn tab" data-tab="pad" aria-pressed="false">PAD</button>
+        <button class="btn tab" data-tab="trim" aria-pressed="false">TRIM</button>
+        <button class="btn tab" data-tab="fx" aria-pressed="false">FX</button>
+        <button class="btn tab" data-tab="rec" aria-pressed="false">REC</button>
+        <button class="btn tab" data-tab="mic" aria-pressed="false">MIC</button>
+      </nav>
+
+      <div class="sheet" id="sheet">
+        <!-- PAD -->
+        <div class="pane" data-pane="pad">
+          <div class="row">
+            <input class="namein" id="nameIn" type="text" maxlength="16" placeholder="Имя пэда" aria-label="Имя пэда" autocomplete="off" spellcheck="false">
+            <button class="btn" id="loadBtn" type="button">Load</button>
+            <button class="btn" id="clearBtn" type="button">Clear</button>
+          </div>
+          <label class="sl"><span class="lab">Vol</span><input type="range" id="sVol" min="0" max="100" step="1" aria-label="Громкость пэда"><output id="oVol">80</output></label>
+          <label class="sl"><span class="lab">Pitch</span><input type="range" id="sPitch" min="-12" max="12" step="1" aria-label="Питч, полутона"><output id="oPitch">+0</output></label>
+          <div class="field"><span class="lab">Mode</span>
+            <div class="seg" id="modeSeg">
+              <button class="btn" data-mode="oneshot" aria-pressed="true">One shot</button>
+              <button class="btn" data-mode="gate" aria-pressed="false">Gate</button>
+              <button class="btn" data-mode="loop" aria-pressed="false">Loop</button>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Choke group</span>
+            <div class="seg" id="chokeSeg">
+              <button class="btn" data-choke="0" aria-pressed="true">Off</button>
+              <button class="btn" data-choke="1" aria-pressed="false">1</button>
+              <button class="btn" data-choke="2" aria-pressed="false">2</button>
+              <button class="btn" data-choke="3" aria-pressed="false">3</button>
+              <button class="btn" data-choke="4" aria-pressed="false">4</button>
+            </div>
+          </div>
+          <div class="field"><span class="lab">Цвет</span><div class="sw" id="colorSw"></div></div>
+        </div>
+
+        <!-- TRIM -->
+        <div class="pane" data-pane="trim" hidden>
+          <canvas class="trim" id="trim" aria-label="Обрезка сэмпла"></canvas>
+          <div class="read"><span id="trS">START 0.00</span><span id="trE">END 0.00</span><span id="trL">LEN 0.00</span></div>
+          <div class="row">
+            <button class="btn" id="trPlay" type="button" style="flex:1">▶ Play</button>
+            <button class="btn" id="trReset" type="button" style="flex:1">Reset</button>
+          </div>
+          <p class="info">Тяните левый и правый маркеры. В режиме <b>Loop</b> зацикливается только выбранный отрезок. «Play» держите нажатым для режима Gate.</p>
+        </div>
+
+        <!-- FX -->
+        <div class="pane" data-pane="fx" hidden>
+          <label class="sl"><span class="lab">Filter</span><input type="range" id="sFlt" min="-100" max="100" step="1" aria-label="Фильтр: влево НЧ, вправо ВЧ"><output id="oFlt">OFF</output></label>
+          <label class="sl"><span class="lab">Delay</span><input type="range" id="sDly" min="0" max="100" step="1" aria-label="Эхо"><output id="oDly">0</output></label>
+          <label class="sl"><span class="lab">D.Time</span><input type="range" id="sDt" min="0" max="100" step="1" aria-label="Время эха"><output id="oDt">38</output></label>
+          <label class="sl"><span class="lab">Reverb</span><input type="range" id="sRev" min="0" max="100" step="1" aria-label="Реверберация"><output id="oRev">0</output></label>
+          <div class="row"><button class="btn" id="fxByp" type="button" aria-pressed="false" style="flex:1">FX bypass</button><button class="btn" id="fxReset" type="button" style="flex:1">Reset FX</button></div>
+          <p class="info">Эффекты общие, на весь микс. Фильтр: влево — глухой звук (low-pass), вправо — тонкий (high-pass). Двойной тап по ползунку возвращает значение по умолчанию.</p>
+        </div>
+
+        <!-- REC -->
+        <div class="pane" data-pane="rec" hidden>
+          <div class="field"><span class="lab">Запись игры на пэдах</span>
+            <div class="seg">
+              <button class="btn rec" id="recBtn" type="button" aria-pressed="false">● Rec</button>
+              <button class="btn" id="playBtn" type="button" aria-pressed="false">▶ Play</button>
+              <button class="btn" id="seqClr" type="button">Clear</button>
+            </div>
+          </div>
+          <p class="info" id="recInfo">Нажмите Rec, играйте, затем Rec ещё раз — запись зациклится. Rec поверх играющего цикла — овердаб.</p>
+          <div class="field"><span class="lab">Запись выхода (микс в файл)</span>
+            <div class="seg"><button class="btn rec" id="mixBtn" type="button" aria-pressed="false">● Rec mix</button></div>
+          </div>
+          <a class="dl" id="mixLink" download="pad16-mix">Скачать запись</a>
+        </div>
+
+        <!-- MIC -->
+        <div class="pane" data-pane="mic" hidden>
+          <p class="info" id="micTarget">Запись пойдёт на пэд <b>A01</b>.</p>
+          <button class="btn big rec" id="micBtn" type="button" aria-pressed="false">● Rec mic</button>
+          <div class="meter" aria-hidden="true"><i id="micLvl"></i></div>
+          <div class="read"><span id="micTime">0.0 s</span><span>MAX 30 s</span></div>
+          <p class="info" id="micInfo">После остановки запись сразу ложится на выбранный пэд, её можно обрезать на вкладке TRIM. Нужен доступ к микрофону и https-страница.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="hint">Тапай по пэдам. Свои звуки — <b>Load</b> на вкладке PAD. Пэды играют одновременно; чтобы звуки обрывали друг друга, задайте одинаковую Choke group на вкладке PAD.</p>
+</main>
+<input type="file" id="file" accept="audio/*" multiple hidden>
+<script>
+(() => {
+'use strict';
+const N = 16, BANKS = 4, TOTAL = N * BANKS;
+const LEDS = ['#ff5a3c', '#ff9a1f', '#f2d63a', '#46dc8c', '#37c6ea', '#e45cd8'];
+const CODES = ['KeyZ','KeyX','KeyC','KeyV','KeyA','KeyS','KeyD','KeyF','KeyQ','KeyW','KeyE','KeyR','Digit1','Digit2','Digit3','Digit4'];
+const KEYCAP = ['Z','X','C','V','A','S','D','F','Q','W','E','R','1','2','3','4'];
+const MODE_LABEL = { oneshot: 'ONE SHOT', gate: 'GATE', loop: 'LOOP' };
+const BANK_L = ['A','B','C','D'];
+const $ = s => document.querySelector(s);
+const TAU = Math.PI * 2, rnd = () => Math.random() * 2 - 1;
+
+let ctx = null, bus = null, master = null, masterVol = 85;
+let bank = 0, sel = 0, dirty = true, lcdFg = '#1d2813';
+const pads = [], voices = {};
+const fx = { bypass: false, filter: 0, dMix: 0, dTime: 38, rMix: 0 };
+let lpF, hpF, dly, dFb, dWet, rWet, conv;
+
+/* ---------- audio engine + master FX ---------- */
+const mg = v => (v / 100) ** 2;
+const gainOf = p => (p.vol / 100) ** 2 * 1.1;
+const rateOf = p => Math.pow(2, p.pitch / 12);
+
+function makeIR(sec) {
+  const sr = ctx.sampleRate, n = Math.floor(sr * sec), b = ctx.createBuffer(2, n, sr);
+  for (let c = 0; c < 2; c++) {
+    const d = b.getChannelData(c); let lpv = 0;
+    for (let i = 0; i < n; i++) {
+      const x = i / n; lpv += (rnd() - lpv) * (.65 - .5 * x);
+      d[i] = lpv * Math.pow(1 - x, 2.6) * (x < .004 ? x / .004 : 1);
+    }
+  }
+  return b;
+}
+function ensureAudio() {
+  if (!ctx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    ctx = new AC({ latencyHint: 'interactive' });
+    master = ctx.createGain(); master.gain.value = mg(masterVol);
+    bus = ctx.createGain();
+    lpF = ctx.createBiquadFilter(); lpF.type = 'lowpass'; lpF.frequency.value = 20000;
+    hpF = ctx.createBiquadFilter(); hpF.type = 'highpass'; hpF.frequency.value = 20;
+    dly = ctx.createDelay(1.5); dFb = ctx.createGain(); dFb.gain.value = .42; dWet = ctx.createGain(); dWet.gain.value = 0;
+    conv = ctx.createConvolver(); conv.buffer = makeIR(2.2); rWet = ctx.createGain(); rWet.gain.value = 0;
+    bus.connect(lpF); lpF.connect(hpF); hpF.connect(master);
+    hpF.connect(dly); dly.connect(dFb); dFb.connect(dly); dly.connect(dWet); dWet.connect(master);
+    hpF.connect(conv); conv.connect(rWet); rWet.connect(master);
+    master.connect(ctx.destination);
+    applyFx();
+  }
+  if (ctx.state !== 'running') {
+    try { const p = ctx.resume(); if (p && p.catch) p.catch(function(){}); } catch (e) {}
+  }
+  return true;
+}
+function applyFx() {
+  if (!ctx) return;
+  const t = ctx.currentTime, b = fx.bypass, f = fx.filter;
+  const lo = (!b && f < 0) ? 200 * Math.pow(100, (100 + f) / 100) : 20000;
+  const hi = (!b && f > 0) ? 20 * Math.pow(250, f / 100) : 20;
+  lpF.frequency.setTargetAtTime(lo, t, .02); hpF.frequency.setTargetAtTime(hi, t, .02);
+  lpF.Q.value = hpF.Q.value = (!b && f !== 0) ? 2.5 : .7;
+  dly.delayTime.setTargetAtTime(.08 + .72 * fx.dTime / 100, t, .05);
+  dWet.gain.setTargetAtTime(b ? 0 : fx.dMix / 100 * .9, t, .02);
+  rWet.gain.setTargetAtTime(b ? 0 : fx.rMix / 100 * 1.4, t, .02);
+}
+
+function decode(ab) {
+  return new Promise((res, rej) => {
+    const r = ctx.decodeAudioData(ab, res, rej);
+    if (r && r.then) r.then(res, rej);
+  });
+}
+function computePeaks(buf) {
+  const d = buf.getChannelData(0), n = 320, out = new Float32Array(n);
+  const step = Math.max(1, Math.floor(d.length / n)), hop = Math.max(1, (step / 48) | 0);
+  let mx = 0.0001;
+  for (let i = 0; i < n; i++) {
+    let m = 0; const s = i * step, e = Math.min(d.length, s + step);
+    for (let j = s; j < e; j += hop) { const a = Math.abs(d[j]); if (a > m) m = a; }
+    out[i] = m; if (m > mx) mx = m;
+  }
+  for (let i = 0; i < n; i++) out[i] /= mx;
+  return out;
+}
+
+/* ---------- voices (with trim) ---------- */
+const offOf = p => p.start * p.buffer.duration;
+const endOf = p => p.end * p.buffer.duration;
+function posOf(v, p) {
+  const s = offOf(p), e = endOf(p);
+  let pos = v.base + (ctx.currentTime - v.t0) * v.rate;
+  if (v.src.loop) { const L = Math.max(.001, e - s); if (pos >= e) pos = s + ((pos - s) % L); }
+  return Math.min(Math.max(pos, s), e);
+}
+function startVoice(g) {
+  const p = pads[g];
+  stopVoice(g, 0.004);
+  const t = ctx.currentTime, r = rateOf(p), loop = p.mode === 'loop';
+  const s = offOf(p), e = endOf(p), len = Math.max(.01, e - s);
+  const src = ctx.createBufferSource();
+  src.buffer = p.buffer; src.loop = loop; src.playbackRate.value = r;
+  if (loop) { src.loopStart = s; src.loopEnd = e; }
+  const gn = ctx.createGain();
+  gn.gain.setValueAtTime(0, t);
+  gn.gain.linearRampToValueAtTime(gainOf(p), t + 0.003);
+  const dur = len / r;
+  if (!loop && dur > .03) { gn.gain.setValueAtTime(gainOf(p), t + dur - .012); gn.gain.linearRampToValueAtTime(0, t + dur); }
+  src.connect(gn); gn.connect(bus);
+  const v = { src, gn, base: s, t0: t, rate: r };
+  voices[g] = v;
+  src.onended = () => { if (voices[g] === v) { delete voices[g]; refreshPad(g); renderLCD(); bankLeds(); } };
+  if (loop) src.start(t, s); else src.start(t, s, len);
+  refreshPad(g); bankLeds(); renderLCD();
+}
+function stopVoice(g, rel = 0.025) {
+  const v = voices[g]; if (!v) return;
+  delete voices[g];
+  const t = ctx.currentTime;
+  try {
+    v.gn.gain.cancelScheduledValues(t);
+    v.gn.gain.setValueAtTime(v.gn.gain.value, t);
+    v.gn.gain.linearRampToValueAtTime(0, t + rel);
+    v.src.stop(t + rel + 0.01);
+  } catch (e) {}
+  refreshPad(g); bankLeds(); renderLCD();
+}
+function stopAll() { Object.keys(voices).forEach(g => stopVoice(+g, 0.05)); }
+function applyLive(g) {
+  const v = voices[g], p = pads[g]; if (!v || !p.buffer) return;
+  const t = ctx.currentTime;
+  v.base = posOf(v, p); v.t0 = t; v.rate = rateOf(p);
+  v.src.playbackRate.setTargetAtTime(v.rate, t, 0.01);
+  v.gn.gain.setTargetAtTime(gainOf(p), t, 0.01);
+  v.src.loop = p.mode === 'loop';
+  if (v.src.loop) { v.src.loopStart = offOf(p); v.src.loopEnd = endOf(p); }
+}
+
+function flash(g) {
+  if (Math.floor(g / N) !== bank) return;
+  const el = padEls[g % N]; if (!el) return;
+  el.classList.add('hit'); setTimeout(() => el.classList.remove('hit'), 130);
+}
+function press(g, seq) {
+  if (!ensureAudio()) { msg('NO WEB AUDIO'); return; }
+  if (!seq) select(g);
+  ensureBuf(g);
+  const p = pads[g];
+  flash(g);
+  if (!seq) recEvent(g, 1);
+  if (!p.buffer) { if (!seq) msg('EMPTY - LOAD A FILE'); return; }
+  if (p.mode === 'loop' && voices[g]) { stopVoice(g); return; }
+  if (p.choke > 0) {
+    for (let h = 0; h < TOTAL; h++) if (h !== g && pads[h].choke === p.choke && voices[h]) stopVoice(h, 0.012);
+  }
+  startVoice(g);
+}
+function release(g, seq) {
+  if (!seq) recEvent(g, 0);
+  const p = pads[g];
+  if (p.mode === 'gate' && voices[g]) stopVoice(g);
+}
+
+/* ---------- pad data ---------- */
+const mkPad = () => ({ name: '', vol: 80, pitch: 0, mode: 'oneshot', choke: 0, color: 0, buffer: null, peaks: null, raw: null, demo: null, gen: null, start: 0, end: 1 });
+function ensureBuf(g) {
+  const p = pads[g]; if (!p || !p.gen) return;
+  const f = p.gen; p.gen = null;
+  try { p.buffer = f(); p.peaks = computePeaks(p.buffer); } catch (e) { console.error(e); }
+  refreshPad(g); if (g === sel) renderSel();
+}
+function setPadAudio(g, o) {
+  stopVoice(g);
+  const p = pads[g];
+  p.gen = null; p.buffer = o.buffer; p.peaks = computePeaks(o.buffer); p.raw = o.raw || null; p.demo = null; p.start = 0; p.end = 1;
+  if (o.name) p.name = o.name;
+  refreshPad(g); if (g === sel) renderSel(); queueSave(g);
+}
+function clearPad(g) {
+  stopVoice(g);
+  const p = pads[g];
+  p.gen = null; p.buffer = null; p.peaks = null; p.raw = null; p.demo = null; p.name = ''; p.start = 0; p.end = 1;
+  refreshPad(g); if (g === sel) renderSel(); queueSave(g);
+}
+async function loadFiles(list, startG) {
+  if (!ensureAudio()) return;
+  const end = (Math.floor(startG / N) + 1) * N;
+  let g = startG, bad = 0, ok = 0;
+  for (const f of Array.from(list)) {
+    if (g >= end) break;
+    const looksAudio = /^(audio|video)\//.test(f.type) || /\.(wav|mp3|m4a|aac|ogg|oga|opus|flac|aif|aiff|caf|webm)$/i.test(f.name);
+    if (!looksAudio) { bad++; continue; }
+    try {
+      const raw = await f.arrayBuffer();
+      const buffer = await decode(raw.slice(0));
+      setPadAudio(g, { buffer, raw, name: f.name.replace(/\.[^.]+$/, '').slice(0, 16) });
+      g++; ok++;
+    } catch (e) { bad++; }
+  }
+  if (bad) msg(ok ? 'SOME FILES SKIPPED' : 'CANNOT READ FILE', 2600);
+  else if (ok) msg('LOADED ' + ok, 1400);
+}
+
+/* ---------- persistence (new DB: old demo data is not mixed in) ---------- */
+let db = null;
+function openDB() {
+  return new Promise(res => {
+    try {
+      const r = indexedDB.open('pad16radio', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('pads');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+      r.onblocked = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function dbAll() {
+  return new Promise(res => {
+    if (!db) return res({});
+    try {
+      const out = {}, rq = db.transaction('pads').objectStore('pads').openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c) { out[c.key] = c.value; c.continue(); } else res(out); };
+      rq.onerror = () => res(out);
+    } catch (e) { res({}); }
+  });
+}
+function dbPut(k, v) { if (!db) return; try { db.transaction('pads', 'readwrite').objectStore('pads').put(v, k); } catch (e) {} }
+const restoredKeys = new Set();
+const saveT = {};
+function queueSave(g) {
+  clearTimeout(saveT[g]);
+  saveT[g] = setTimeout(() => {
+    const p = pads[g];
+    dbPut(g, { name: p.name, vol: p.vol, pitch: p.pitch, mode: p.mode, choke: p.choke, color: p.color, start: p.start, end: p.end, has: !!(p.buffer || p.gen), demo: p.demo, raw: p.raw });
+  }, 350);
+}
+async function restore() {
+  db = await openDB();
+  const all = await dbAll();
+  const mig = lsGet('pad16r.chk') !== '2';
+  for (const k of Object.keys(all)) {
+    const g = +k, r = all[k], p = pads[g]; if (!p) continue;
+    restoredKeys.add(g);
+    p.name = r.name || ''; p.vol = r.vol != null ? r.vol : 80; p.pitch = r.pitch != null ? r.pitch : 0;
+    p.mode = r.mode || 'oneshot'; p.choke = mig ? 0 : (r.choke || 0); p.color = r.color || 0;
+    if (mig && r.choke) queueSave(g);
+    p.start = r.start != null ? r.start : 0; p.end = r.end != null ? r.end : 1;
+    if (r.raw) {
+      try { const buffer = await decode(r.raw.slice(0)); p.gen = null; p.buffer = buffer; p.peaks = computePeaks(buffer); p.raw = r.raw; p.demo = null; } catch (e) {}
+    } else if (!r.has) { p.gen = null; p.buffer = null; p.peaks = null; p.raw = null; p.demo = null; }
+  }
+  lsSet('pad16r.chk', '2');
+  renderPads(); renderSel();
+}
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+/* ---------- radio library: synthesized placeholders (replace with real files via Load) ---------- */
+function synth(len, fn) {
+  const sr = ctx.sampleRate, n = Math.floor(len * sr);
+  const b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0), st = {};
+  for (let i = 0; i < n; i++) d[i] = fn(i / sr, st, sr);
+  let m = 0; for (let i = 0; i < n; i++) { const a = Math.abs(d[i]); if (a > m) m = a; }
+  if (m > 0) { const k = 0.9 / m; for (let i = 0; i < n; i++) d[i] *= k; }
+  return b;
+}
+const hp = (s, key, n) => { const o = n - (s[key] || 0); s[key] = n; return o; };
+const lp = (s, key, x, a) => (s[key] = (s[key] || 0) + a * (x - (s[key] || 0)));
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+const env = (t, a, d) => t < 0 ? 0 : Math.min(1, t / a) * Math.exp(-t * d);
+const nt = (t, d, len) => { const u = t - d; return u < 0 || u > len ? 0 : Math.min(1, u / .004, (len - u) / .012); };
+const chirp = (t, f1, f0, k) => Math.sin(TAU * (f1 * t + f0 * (1 - Math.exp(-k * t)) / k));
+const bell = (t, f, d) => t < 0 ? 0 : Math.exp(-t * d) * (Math.sin(TAU * f * t) + .4 * Math.sin(TAU * f * 2.4 * t) * Math.exp(-t * d) + .25 * Math.sin(TAU * f * 5.95 * t) * Math.exp(-t * 2 * d));
+const BW = Array.from({ length: 12 }, (_, i) => 1 / Math.pow(i + 1, 1.15));
+const brass = (t, f, n = 9) => { let o = 0; for (let k = 1; k <= n; k++) o += Math.sin(TAU * f * k * t) * BW[k - 1]; return o; };
+const snareS = t => t < 0 ? 0 : rnd() * Math.exp(-t * 20) * .7 + Math.sin(TAU * 190 * t) * Math.exp(-t * 25) * .6;
+const riser = (len, f0, f1, nz) => () => synth(len, (t, s) => { const x = t / len; return (hp(s, 'p', rnd()) * nz + Math.sin(TAU * (f0 * t + (f1 - f0) * t * t / (2 * len))) * .45) * x * x * Math.min(1, (len - t) / .02); });
+const whoosh = (len, a0, a1, hpf) => () => synth(len, (t, s) => { const x = t / len, k = Math.sin(Math.PI * x); let o = lp(s, 'n', rnd(), a0 + a1 * k * k); if (hpf) o = hp(s, 'h', o) * 2; return o * Math.pow(k, 1.4); });
+const sad = notes => () => synth(notes.reduce((a, n) => a + n[1], 0) + .3, (t, s) => {
+  let acc = 0, o = 0;
+  for (let i = 0; i < notes.length; i++) {
+    const u = t - acc, L = notes[i][1]; acc += L;
+    if (u < 0 || u > L) continue;
+    const last = i === notes.length - 1, vib = last ? 1 + .012 * Math.sin(TAU * 5.5 * u) * Math.min(1, u / .4) : 1;
+    const x = brass(u, hz(notes[i][0]) * vib, 10) * Math.min(1, u / .03, (L - u) / .05);
+    o = lp(s, 'w', x, last ? .22 : .06 + .3 * Math.sin(Math.PI * Math.min(1, u / L)));
+  }
+  return o;
+});
+
+/* [name, mode, choke, color, vol, generator] */
+const LIB_A = [
+  ['STING A', 'oneshot', 2, 5, 85, () => synth(1.8, t => { let o = Math.sin(TAU * 62 * t) * Math.exp(-t * 14) * .7; for (const m of [60, 64, 67, 74]) o += bell(t, hz(m), 2.2) * .5; return o + bell(t - .05, hz(88), 4) * .35; })],
+  ['STING B', 'oneshot', 2, 5, 85, () => synth(1.5, t => { let o = 0; [[0, 55], [.11, 60], [.22, 64]].forEach(n => { const u = t - n[0]; o += brass(u, hz(n[1])) * nt(t, n[0], .12) * .7; }); const u = t - .34; if (u > 0) for (const m of [60, 64, 67, 72]) o += brass(u, hz(m)) * Math.min(1, u / .02) * Math.exp(-u * 3.2) * .45; return o; })],
+  ['STING C', 'oneshot', 2, 0, 85, () => synth(2.2, t => { let o = chirp(t, 35, 90, 10) * Math.exp(-t * 2.4) * .9; for (const m of [48, 51, 55, 60]) o += brass(t, hz(m), 8) * env(t, .03, 1.9) * .22; return o; })],
+  ['LOGO UP', 'oneshot', 2, 5, 80, () => synth(1.7, t => { let o = 0; [72, 76, 79, 84, 88, 91].forEach((m, i) => o += bell(t - i * .075, hz(m), 5) * .5); for (const m of [84, 88, 91]) o += bell(t - .46, hz(m), 2) * .45; return o; })],
+  ['LOGO DN', 'oneshot', 2, 5, 80, () => synth(1.7, t => { let o = 0; [91, 88, 84, 79, 76, 72].forEach((m, i) => o += bell(t - i * .075, hz(m), 5) * .5); for (const m of [72, 67, 64]) o += bell(t - .46, hz(m), 2) * .45; return o; })],
+  ['SPARKLE', 'oneshot', 0, 5, 70, () => { const ev = Array.from({ length: 18 }, () => [Math.random() * .9, [84, 88, 91, 93, 96, 100][Math.random() * 6 | 0]]); return synth(1.7, t => { let o = 0; for (const e of ev) o += bell(t - e[0], hz(e[1]), 7) * .3; return o; }); }],
+  ['RISER', 'oneshot', 0, 4, 75, riser(1.6, 300, 2600, .7)],
+  ['RISER L', 'oneshot', 0, 4, 75, riser(4, 200, 2200, .8)],
+  ['DOWNLFT', 'oneshot', 0, 4, 75, () => synth(1.6, (t, s) => { const x = 1 - t / 1.6; return (hp(s, 'p', rnd()) * .6 + Math.sin(TAU * (2600 * t - 1000 * t * t / 1.6)) * .4) * x * x * Math.min(1, t / .01); })],
+  ['WHOOSH', 'oneshot', 0, 4, 80, whoosh(.9, .02, .5, false)],
+  ['WHOOSH 2', 'oneshot', 0, 4, 80, whoosh(1.5, .08, .6, true)],
+  ['IMPACT', 'oneshot', 0, 0, 90, () => synth(2, (t, s) => chirp(t, 30, 90, 6) * Math.exp(-t * 2.2) + lp(s, 'n', rnd(), .2) * Math.exp(-t * 6) * .5)],
+  ['HIT', 'oneshot', 0, 0, 90, () => synth(.7, (t, s) => chirp(t, 50, 120, 30) * Math.exp(-t * 7) + hp(s, 'h', rnd()) * Math.exp(-t * 30) * .6 + bell(t, 520, 9) * .25)],
+  ['SCRATCH', 'oneshot', 0, 1, 80, () => synth(.55, (t, s) => { const k = Math.abs(Math.sin(Math.PI * t / .275)); return (Math.sign(Math.sin(TAU * (170 * t + 55 * Math.sin(TAU * 6 * t)))) * .6 + rnd() * .5) * Math.pow(k, .7); })],
+  ['TAPE STP', 'oneshot', 0, 1, 80, () => synth(1, t => { const ph = TAU * 110 * (1 - Math.pow(1 - t, 3)); let o = 0; for (let k = 1; k <= 5; k++) o += Math.sin(k * ph) / k; return o * Math.sqrt(1 - t); })],
+  ['ZIP', 'oneshot', 0, 4, 75, () => synth(.3, (t, s) => (Math.sin(TAU * (200 * t + 3800 * t * t / .6)) * .7 + hp(s, 'p', rnd()) * .3) * Math.sin(Math.PI * t / .3))]
+];
+
+const LIB_B = [
+  ['RIMSHOT', 'oneshot', 0, 1, 85, () => synth(1.8, (t, s) => { let o = snareS(t) + snareS(t - .001) * .0; o += chirp(t - .17, 95, 90, 15) * Math.exp(-(t - .17) * 9) * (t > .17 ? 1 : 0); const u = t - .42; if (u > 0) o += hp(s, 'c', rnd()) * Math.exp(-u * 5) * .6; return o; })],
+  ['DRUMROLL', 'oneshot', 0, 1, 80, () => synth(3.4, (t, s) => { if (t < 2.4) { const u = t % .04; return (rnd() * Math.exp(-u * 70) + Math.sin(TAU * 190 * u) * Math.exp(-u * 50) * .5) * (.25 + .75 * t / 2.4); } const v = t - 2.4; return snareS(v) * 1.3 + hp(s, 'c', rnd()) * Math.exp(-v * 2.4) * .8; })],
+  ['CRASH', 'oneshot', 0, 2, 75, () => synth(2.4, (t, s) => { let o = hp(s, 'p', rnd()) * .7; for (const f of [3100, 4370, 5290, 7000]) o += Math.sin(TAU * f * t) * .12; return o * Math.exp(-t * 2.4); })],
+  ['APPLAUSE', 'oneshot', 0, 3, 70, () => synth(4.4, (t, s) => {
+    if (s.i === undefined) { s.i = 0; s.a = .5; s.pop = 0; }
+    if (s.i++ % 220 === 0) s.a = .2 + .8 * Math.random();
+    const amp = lp(s, 'c', s.a, .03), bp = lp(s, 'b', hp(s, 'p', rnd()), .6);
+    if (Math.random() < .0012) s.pop = 1; s.pop *= .993;
+    return (bp * amp * amp + s.pop * rnd() * .6) * Math.min(1, t / .6) * Math.min(1, (4.4 - t) / 1.4);
+  })],
+  ['HA HA', 'oneshot', 0, 2, 75, () => synth(1.8, (t, s) => {
+    if (t > 1.5) return 0;
+    const f0 = 250 - 35 * t, ph = (t * 5.5) % 1, e = Math.exp(-ph * 4.5) * Math.min(1, ph / .05) * Math.min(1, (1.5 - t) / .2);
+    let o = 0;
+    for (let k = 1; k <= 14; k++) { const f = k * f0; o += Math.sin(TAU * (k * (250 * t - 17.5 * t * t))) * (Math.exp(-Math.pow((f - 800) / 350, 2)) + .8 * Math.exp(-Math.pow((f - 1300) / 450, 2))); }
+    return (o * .35 + lp(s, 'n', rnd(), .5) * .25) * e;
+  })],
+  ['SAD TBN', 'oneshot', 0, 0, 80, sad([[58, .45], [57, .45], [56, .45], [55, 1.3]])],
+  ['AIRHORN', 'oneshot', 0, 0, 80, () => synth(1.6, (t, s) => { let o = 0; for (const f of [440, 554, 659]) o += brass(t, f * (1 + .002 * Math.sin(TAU * 6 * t)), 10); return Math.tanh(o * .5) * Math.min(1, t / .02) * Math.min(1, (1.5 - t) / .3) + rnd() * .03; })],
+  ['BUZZER', 'oneshot', 0, 0, 80, () => synth(.9, t => Math.tanh(1.6 * (Math.sign(Math.sin(TAU * 160 * t)) + Math.sign(Math.sin(TAU * 168 * t))) * .5) * nt(t, 0, .8))],
+  ['CORRECT', 'oneshot', 0, 3, 80, () => synth(1.3, t => bell(t, 880, 4) + bell(t - .15, 1320, 3.5))],
+  ['DING', 'oneshot', 0, 2, 80, () => synth(1.5, t => bell(t, 1568, 3))],
+  ['TA-DA', 'oneshot', 0, 5, 80, () => synth(2, t => { let o = brass(t, hz(55)) * nt(t, 0, .14) + brass(t, hz(60)) * nt(t, .14, .14); const u = t - .28; if (u > 0) for (const m of [60, 64, 67, 72]) o += brass(u, hz(m)) * Math.min(1, u / .02) * Math.exp(-u * 2.2) * .5; return o; })],
+  ['CRICKETS', 'oneshot', 0, 3, 65, () => synth(3.4, t => { const p1 = t % .27, p2 = (t + .13) % .31, g1 = p1 < .09 ? Math.sin(Math.PI * p1 / .09) : 0, g2 = p2 < .09 ? Math.sin(Math.PI * p2 / .09) : 0, am = .5 + .5 * Math.sin(TAU * 38 * t); return (Math.sin(TAU * 4600 * t) * g1 + .8 * Math.sin(TAU * 4250 * t) * g2) * am * Math.min(1, t / .3) * Math.min(1, (3.4 - t) / .6); })],
+  ['GONG', 'oneshot', 0, 2, 75, () => synth(4.5, t => { let o = 0; for (const p of [[1, 1], [1.51, .6], [2.02, .5], [2.74, .4], [3.9, .3], [5.2, .2]]) o += Math.sin(TAU * 110 * p[0] * t) * p[1] * Math.exp(-t * (.9 + p[0] * .5)); return o * Math.min(1, t / .01) * (1 + .15 * Math.sin(TAU * 3 * t)); })],
+  ['BOING', 'oneshot', 0, 1, 75, () => synth(.9, t => Math.sin(TAU * (260 * t + 25 * Math.sin(TAU * 11 * t))) * Math.exp(-t * 4.5))],
+  ['WHISTLE', 'oneshot', 0, 4, 70, () => synth(.9, t => Math.sin(TAU * (600 * t + 875 * t * t) + 2.5 * Math.sin(TAU * 7 * t) * t) * nt(t, 0, .85))],
+  ['WOMP', 'oneshot', 0, 0, 80, sad([[47, .3], [43, 1.0]])]
+];
+
+const rndTimes = (n, span) => Array.from({ length: n }, () => Math.random() * span).sort((a, b) => a - b);
+
+const LIB_C = [
+  ['PIPS', 'oneshot', 0, 2, 75, () => synth(5.7, t => { const i = Math.floor(t), u = t - i; return Math.sin(TAU * 1000 * t) * (i < 5 ? nt(u, 0, .1) : nt(u, 0, .5)); })],
+  ['TEST 1K', 'oneshot', 0, 2, 40, () => synth(1, t => Math.sin(TAU * 1000 * t))],
+  ['CENSOR', 'gate', 0, 0, 60, () => synth(6, t => Math.sin(TAU * 1000 * t))],
+  ['COUNT', 'oneshot', 0, 1, 75, () => synth(3.8, t => { const i = Math.floor(t), u = t - i; return i < 3 ? Math.sin(TAU * 800 * t) * nt(u, 0, .2) : Math.sin(TAU * 1600 * t) * nt(u, 0, .5); })],
+  ['NEWS A', 'oneshot', 2, 4, 80, () => synth(2.2, t => { let o = 0; [72, 76, 79, 84, 79, 76, 84, 88].forEach((m, i) => { o += Math.sin(TAU * hz(m) * t) * nt(t, i * .11, .1) * .6; }); for (const m of [72, 79, 84, 88]) o += bell(t - .92, hz(m), 2.4) * .4; return o; })],
+  ['BREAKING', 'oneshot', 2, 0, 80, () => synth(2.4, t => { const i = Math.floor(t / .22), u = t - i * .22; let o = i < 8 ? Math.tanh(2 * Math.sin(TAU * (i % 2 ? 660 : 880) * t)) * nt(u, 0, .2) * .6 : 0; o += chirp(Math.max(0, t - 1.8), 45, 80, 8) * Math.exp(-Math.max(0, t - 1.8) * 3) * (t > 1.8 ? 1 : 0) * .9; return o; })],
+  ['TICKER', 'loop', 0, 4, 55, () => synth(2, t => { const u = t % .125, i = Math.floor(t / .125) % 4; return Math.sin(TAU * [1500, 1900, 1700, 2300][i] * u) * Math.exp(-u * 120); })],
+  ['TALKBACK', 'oneshot', 0, 3, 70, () => synth(.9, t => Math.sin(TAU * 1600 * t) * (nt(t, 0, .09) + nt(t, .2, .09) + nt(t, .4, .09)))],
+  ['PHONE', 'loop', 0, 3, 60, () => synth(3, t => (Math.sin(TAU * 400 * t) + Math.sin(TAU * 450 * t)) * (.65 + .35 * Math.sin(TAU * 25 * t)) * (nt(t, 0, .4) + nt(t, .6, .4)))],
+  ['DOORBELL', 'oneshot', 0, 2, 75, () => synth(2.2, t => bell(t, 659, 2.5) + bell(t - .55, 523, 2.2))],
+  ['NOTIFY', 'oneshot', 0, 5, 75, () => synth(.8, t => bell(t, 1175, 9) * .8 + bell(t - .1, 1760, 7))],
+  ['POP', 'oneshot', 0, 5, 80, () => synth(.12, t => Math.sin(TAU * (300 * t + 4000 * t * t)) * Math.exp(-t * 40))],
+  ['KA-CHING', 'oneshot', 0, 3, 80, () => synth(1.5, (t, s) => hp(s, 'p', rnd()) * (Math.exp(-t * 80) * .8 + env(t - .05, .002, 40) * .5) + (bell(t - .12, 2093, 4) + bell(t - .12, 3136, 5) * .6) * .7)],
+  ['TYPEWRT', 'oneshot', 0, 2, 70, () => { const ev = rndTimes(14, 1.8); return synth(2.4, (t, s) => { let o = 0; for (const d of ev) { const u = t - d; if (u > 0 && u < .06) o += (rnd() * Math.exp(-u * 140) + Math.sin(TAU * 180 * u) * Math.exp(-u * 60) * .6); } return o * .8 + bell(t - 1.95, 2400, 6) * .5; }); }],
+  ['TICKTOCK', 'loop', 0, 2, 55, () => synth(1, (t, s) => { const u = t % .5, f = t < .5 ? 1400 : 1000; return Math.sin(TAU * f * u) * Math.exp(-u * 90) + rnd() * Math.exp(-u * 200) * .5; })],
+  ['RADIO TUNE', 'oneshot', 0, 4, 65, () => synth(2.4, (t, s) => { const k = Math.min(1, t / .2) * Math.min(1, (2.4 - t) / .3); return (hp(s, 'p', rnd()) * .35 + Math.sin(TAU * 900 * t + 7 * Math.sin(TAU * .9 * t) * 60) * .25 * (.5 + .5 * Math.sin(TAU * .6 * t))) * k; })]
+];
+
+/* music bed generator: seamless loop (oscillator frequencies are locked to the loop length) */
+function bed(o) {
+  const bl = 60 / o.bpm, barL = 4 * bl, nb = o.bars, len = nb * barL, ch = o.chords;
+  const q = f => Math.round(f * len) / len;
+  const F = ch.map(c => c.map(m => q(hz(m)))), Fd = ch.map(c => c.map(m => q(hz(m) * 1.004))), R = ch.map(c => q(hz(c[0] - 12)));
+  const FA = ch.map(c => c.map(m => hz(m + 12)));
+  return synth(len, (t, s) => {
+    let out = 0; const x = t / barL, bi = Math.floor(x) % nb;
+    if (o.pad) {
+      const i0 = Math.floor(x - .5), f = x - .5 - i0, w1 = Math.pow(Math.sin(Math.PI * f / 2), 2), w0 = 1 - w1;
+      const a = ((i0 % nb) + nb) % nb, b = (a + 1) % nb;
+      let p = 0;
+      for (let k = 0; k < F[a].length; k++) p += w0 * (Math.sin(TAU * F[a][k] * t) + .6 * Math.sin(TAU * Fd[a][k] * t));
+      for (let k = 0; k < F[b].length; k++) p += w1 * (Math.sin(TAU * F[b][k] * t) + .6 * Math.sin(TAU * Fd[b][k] * t));
+      out += p * o.pad * .15;
+    }
+    const bi8 = Math.floor(t / bl), bu = t - bi8 * bl;
+    if (o.bass) { const step = o.bass === 2 ? bl / 2 : bl, su = t % step; out += Math.sin(TAU * R[bi] * t) * Math.min(1, su / .004) * (.35 + .65 * Math.exp(-su * 5)) * .5; }
+    if (o.kick && (o.kick === 1 || bi8 % 2 === 0)) out += chirp(bu, 45, 110, 28) * Math.exp(-bu * 7.5) * .9;
+    if (o.snare && bi8 % 2 === 1) out += (rnd() * Math.exp(-bu * 20) * .5 + Math.sin(TAU * 190 * bu) * Math.exp(-bu * 25) * .4);
+    if (o.hat) { const hs = bl / 2, n8 = Math.floor(t / hs), hu = t - n8 * hs; if (o.hat === 2 || n8 % 2 === 1) out += hp(s, 'h', rnd()) * Math.exp(-hu * 70) * .22; else hp(s, 'h', rnd()); }
+    if (o.arp) { const st = bl / o.arp, k = Math.floor(t / st), au = t - k * st, fa = FA[bi][k % FA[bi].length]; out += (Math.sin(TAU * fa * t) + .3 * Math.sin(TAU * 2 * fa * t)) * Math.min(1, au / .003) * Math.exp(-au * 9) * .3; }
+    if (o.crackle) { if (Math.random() < .0006) s.cr = rnd() * .6; s.cr = (s.cr || 0) * .88; out += s.cr + hp(s, 'c', rnd()) * .02; }
+    return out;
+  });
+}
+const Am7 = [57, 60, 64, 67], Fm7 = [53, 57, 60, 64], Cm7 = [48, 55, 59, 64], G6 = [55, 59, 62, 64];
+const noiseLoop = (len, fn) => () => synth(len, fn);
+
+const LIB_D = [
+  ['CHILL', 'loop', 1, 4, 55, () => bed({ bpm: 78, bars: 4, chords: [Am7, Fm7, Cm7, G6], pad: 1, bass: 1, hat: 1 })],
+  ['UPBEAT', 'loop', 1, 1, 55, () => bed({ bpm: 118, bars: 4, chords: [[48, 55, 60, 64], [55, 59, 62, 67], [57, 60, 64, 69], [53, 57, 60, 65]], pad: .7, bass: 2, kick: 1, hat: 1, arp: 2 })],
+  ['NEWS BED', 'loop', 1, 2, 50, () => bed({ bpm: 104, bars: 4, chords: [[57, 60, 64], [57, 60, 64], [53, 57, 60], [52, 56, 59]], pad: .6, bass: 1, kick: 2, arp: 4 })],
+  ['TALK BED', 'loop', 1, 3, 45, () => bed({ bpm: 70, bars: 4, chords: [[52, 59, 64, 67], [50, 57, 62, 66], [48, 55, 60, 64], [50, 57, 62, 66]], pad: 1, bass: 1 })],
+  ['DRIVE', 'loop', 1, 0, 55, () => bed({ bpm: 126, bars: 4, chords: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], pad: .5, bass: 2, kick: 1, hat: 2, arp: 4 })],
+  ['LO-FI', 'loop', 1, 5, 55, () => bed({ bpm: 84, bars: 4, chords: [[50, 53, 57, 60], [55, 58, 62, 65], [48, 52, 55, 59], [45, 48, 52, 55]], pad: .9, bass: 1, kick: 2, snare: 1, hat: 1, crackle: 1 })],
+  ['DRUMS 90', 'loop', 1, 1, 60, () => bed({ bpm: 90, bars: 2, chords: [[48], [48]], kick: 2, snare: 1, hat: 2 })],
+  ['SUSPENSE', 'loop', 1, 0, 45, () => synth(8, t => { const u = t % .5; return Math.sin(TAU * 55 * t) * .6 + Math.sin(TAU * 55.75 * t) * .5 + Math.sin(TAU * 82.5 * t) * .25 * (1 + Math.sin(TAU * .25 * t)) + Math.sin(TAU * 2000 * u) * Math.exp(-u * 120) * .25; })],
+  ['OUTRO', 'oneshot', 1, 3, 60, () => synth(7, t => { let o = 0; for (const m of [48, 55, 60, 64, 71]) o += Math.sin(TAU * hz(m) * t) + .5 * Math.sin(TAU * hz(m) * 1.003 * t); return o * Math.pow(Math.sin(Math.PI * Math.min(1, t / 7)), 1.5) * Math.min(1, (7 - t) / .5); })],
+  ['VINYL', 'loop', 0, 2, 35, noiseLoop(4, (t, s) => { if (Math.random() < .0009) s.cr = rnd() * .9; s.cr = (s.cr || 0) * .9; return s.cr + hp(s, 'h', rnd()) * .05 + Math.sin(TAU * 33.3 / 60 * t * 3) * .0; })],
+  ['RAIN', 'loop', 0, 4, 35, noiseLoop(5, (t, s) => { if (Math.random() < .004) s.d = .8; s.d = (s.d || 0) * .8; return lp(s, 'b', hp(s, 'h', rnd()), .55) * .7 + rnd() * s.d * .3; })],
+  ['ROOM TONE', 'loop', 0, 3, 25, noiseLoop(4, (t, s) => lp(s, 'a', rnd(), .012))],
+  ['CROWD BG', 'loop', 0, 2, 30, noiseLoop(6, (t, s) => { if (s.i === undefined) { s.i = 0; s.a = .5; } if (s.i++ % 7000 === 0) s.a = .3 + .7 * Math.random(); return lp(s, 'b', hp(s, 'h', lp(s, 'x', rnd(), .25)), .5) * (.5 + .5 * lp(s, 'c', s.a, .0004)); })],
+  ['HUM 50', 'loop', 0, 3, 25, () => synth(2, t => Math.sin(TAU * 50 * t) + .5 * Math.sin(TAU * 100 * t) + .25 * Math.sin(TAU * 150 * t))],
+  ['METRO 100', 'loop', 0, 1, 50, () => synth(2.4, t => { const u = t % .6, i = Math.floor(t / .6); return Math.sin(TAU * (i === 0 ? 1600 : 1000) * u) * Math.exp(-u * 60); })],
+  ['HEARTBEAT', 'loop', 0, 0, 50, () => synth(1, t => chirp(t, 50, 40, 40) * Math.exp(-t * 18) + .7 * chirp(Math.max(0, t - .28), 50, 35, 40) * Math.exp(-Math.max(0, t - .28) * 20) * (t > .28 ? 1 : 0))]
+];
+const LIBRARY = [].concat(LIB_A, LIB_B, LIB_C, LIB_D);
+
+function initPads() {
+  for (let g = 0; g < TOTAL; g++) pads.push(mkPad());
+  ensureAudio();
+  if (!ctx) return;
+  LIBRARY.forEach((d, i) => {
+    const p = pads[i];
+    p.name = d[0]; p.mode = d[1]; p.choke = 0; /* все пэды играют вместе; choke включается вручную на вкладке PAD */ p.color = d[3]; p.vol = d[4]; p.gen = d[5]; p.demo = i;
+  });
+}
+/* build sounds in the background, current bank first, one per tick */
+function buildQueue() {
+  const order = [];
+  for (let k = 0; k < BANKS; k++) { const b = (bank + k) % BANKS; for (let i = 0; i < N; i++) order.push(b * N + i); }
+  let n = 0;
+  const step = () => {
+    while (n < order.length && !pads[order[n]].gen) n++;
+    if (n >= order.length) { msg('LIBRARY READY', 1500); return; }
+    ensureBuf(order[n++]); dirty = true;
+    if (n % 8 === 0) msg('BUILDING ' + Math.round(n / order.length * 100) + '%', 600);
+    setTimeout(step, 0);
+  };
+  setTimeout(step, 30);
+}
+
+/* ---------- shared state + boot (data must exist before the sliders are painted) ---------- */
+let curTab = 'pad', sheetOpen = false, micOn = false;
+const seq = { ev: [], rec: false, play: false, len: 0, t0: 0, last: -1 };
+const wideMQ = window.matchMedia('(min-width:860px) and (min-height:541px)');
+{
+  const mv = parseInt(lsGet('pad16r.master'), 10);
+  if (!isNaN(mv)) masterVol = Math.min(100, Math.max(0, mv));
+  try { const f = JSON.parse(lsGet('pad16r.fx') || 'null'); if (f) Object.keys(fx).forEach(k => { if (k in f && k !== 'bypass') fx[k] = +f[k] || 0; }); } catch (e) {}
+}
+initPads();
+
+/* ---------- UI: pads ---------- */
+const padsEl = $('#pads'), padEls = [], rings = [];
+const keyDown = new Map();
+function buildPads() {
+  for (let row = 3; row >= 0; row--) {
+    for (let col = 0; col < 4; col++) {
+      const i = row * 4 + col;
+      const el = document.createElement('button');
+      el.type = 'button'; el.className = 'pad';
+      el.innerHTML = '<svg class="ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><rect x="2.5" y="2.5" width="95" height="95" rx="9" pathLength="100"/></svg><span class="num">' + String(i + 1).padStart(2, '0') + '</span><span class="key">' + KEYCAP[i] + '</span><span class="nm"></span>';
+      const getG = () => bank * N + i;
+      let pressed = false, downG = 0;
+      function doDown() {
+        if (pressed) return;
+        pressed = true; downG = getG();
+        el.classList.add('down');
+        try { press(downG); } catch (err) { console.error(err); }
+      }
+      function doUp() {
+        if (!pressed) return;
+        pressed = false;
+        el.classList.remove('down');
+        try { release(downG); } catch (err) {}
+      }
+      el.addEventListener('touchstart', e => { e.preventDefault(); doDown(); }, { passive: false });
+      el.addEventListener('touchend', e => { e.preventDefault(); doUp(); }, { passive: false });
+      el.addEventListener('touchcancel', doUp);
+      el.addEventListener('mousedown', e => { if (e.button === 0) doDown(); });
+      el.addEventListener('mouseup', doUp);
+      el.addEventListener('mouseleave', doUp);
+      el.addEventListener('contextmenu', e => e.preventDefault());
+      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drop'); });
+      el.addEventListener('dragleave', () => el.classList.remove('drop'));
+      el.addEventListener('drop', e => {
+        e.preventDefault(); el.classList.remove('drop');
+        select(getG());
+        if (e.dataTransfer && e.dataTransfer.files.length) loadFiles(e.dataTransfer.files, getG());
+      });
+      padEls[i] = el; rings[i] = el.querySelector('.ring rect'); padsEl.appendChild(el);
+    }
+  }
+}
+function refreshPad(g) {
+  dirty = true;
+  if (Math.floor(g / N) !== bank) return;
+  const i = g % N, p = pads[g], el = padEls[i];
+  el.style.setProperty('--led', LEDS[p.color]);
+  el.classList.toggle('loaded', !!(p.buffer || p.gen));
+  el.classList.toggle('on', !!voices[g]);
+  el.classList.toggle('loopy', p.mode === 'loop');
+  el.classList.toggle('sel', g === sel);
+  if (!voices[g]) rings[i].style.strokeDashoffset = 100;
+  el.querySelector('.nm').textContent = (p.buffer || p.gen) ? (p.name || 'untitled') : '';
+  el.setAttribute('aria-label', 'Пэд ' + (i + 1) + ((p.buffer || p.gen) ? ', ' + p.name : ', пусто'));
+}
+function renderPads() { for (let i = 0; i < N; i++) refreshPad(bank * N + i); bankLeds(); }
+function bankLeds() {
+  document.querySelectorAll('[data-bank] .bled').forEach((el, b) => {
+    let busy = false;
+    for (const k in voices) if (Math.floor(k / N) === b) { busy = true; break; }
+    el.classList.toggle('busy', busy);
+  });
+}
+function setBank(b) {
+  bank = b; sel = b * N + (sel % N);
+  document.querySelectorAll('[data-bank]').forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.bank === b)));
+  renderPads(); renderSel();
+}
+function select(g) {
+  const old = sel; sel = g;
+  if (Math.floor(old / N) === bank) refreshPad(old);
+  refreshPad(g); renderSel();
+}
+
+/* ---------- LCD ---------- */
+let msgT = 0, msgTxt = '';
+function msg(text, ms = 1600) {
+  msgTxt = text; $('#lcdState').textContent = text; $('#lcdState').classList.remove('rec');
+  clearTimeout(msgT);
+  msgT = setTimeout(() => { msgTxt = ''; renderLCD(); }, ms);
+}
+function renderLCD() {
+  const p = pads[sel]; if (!p) return;
+  $('#lcdPad').textContent = BANK_L[Math.floor(sel / N)] + String(sel % N + 1).padStart(2, '0');
+  $('#lcdName').textContent = (p.buffer || p.gen) ? (p.name || 'UNTITLED').toUpperCase() : 'EMPTY';
+  if (!msgTxt) {
+    const st = $('#lcdState'), live = micOn ? 'MIC REC' : (seq.rec ? 'REC' : '');
+    st.textContent = live || (voices[sel] ? (p.mode === 'loop' ? 'LOOPING' : 'PLAYING') : (seq.play ? 'SEQ' : 'READY'));
+    st.classList.toggle('rec', !!live);
+  }
+  $('#lcdVol').textContent = 'VOL ' + String(p.vol).padStart(3, '0');
+  $('#lcdPit').textContent = 'PIT ' + (p.pitch < 0 ? '-' : '+') + String(Math.abs(p.pitch)).padStart(2, '0');
+  $('#lcdMode').textContent = MODE_LABEL[p.mode];
+  $('#lcdChk').textContent = 'CHK ' + (p.choke || '--');
+  dirty = true;
+}
+
+/* ---------- sliders ---------- */
+const sliders = [];
+function slider(id, o) {
+  const el = $(id), out = $(id.replace('#s', '#o'));
+  const paint = () => {
+    const v = o.get(); el.value = v;
+    el.style.setProperty('--v', ((v - +el.min) / (+el.max - +el.min) * 100) + '%');
+    if (out) out.textContent = o.fmt ? o.fmt(v) : v;
+  };
+  el.addEventListener('input', () => { o.set(+el.value); paint(); });
+  el.addEventListener('dblclick', () => { o.set(o.def); paint(); });
+  sliders.push(paint); paint();
+}
+const edit = (key, v) => { const p = pads[sel]; p[key] = v; applyLive(sel); renderLCD(); queueSave(sel); };
+const saveFx = () => lsSet('pad16r.fx', JSON.stringify(fx));
+slider('#sMaster', { def: 85, get: () => masterVol, fmt: v => v, set: v => { masterVol = v; if (master) master.gain.setTargetAtTime(mg(v), ctx.currentTime, 0.01); lsSet('pad16r.master', v); } });
+slider('#sVol', { def: 80, get: () => pads[sel].vol, set: v => edit('vol', v) });
+slider('#sPitch', { def: 0, get: () => pads[sel].pitch, fmt: v => (v > 0 ? '+' : '') + v, set: v => edit('pitch', v) });
+slider('#sFlt', { def: 0, get: () => fx.filter, fmt: v => v < 0 ? 'LP' + (-v) : v > 0 ? 'HP' + v : 'OFF', set: v => { fx.filter = v; applyFx(); saveFx(); } });
+slider('#sDly', { def: 0, get: () => fx.dMix, set: v => { fx.dMix = v; applyFx(); saveFx(); } });
+slider('#sDt', { def: 38, get: () => fx.dTime, set: v => { fx.dTime = v; applyFx(); saveFx(); } });
+slider('#sRev', { def: 0, get: () => fx.rMix, set: v => { fx.rMix = v; applyFx(); saveFx(); } });
+const paintSliders = () => sliders.forEach(f => f());
+
+function renderSel() {
+  const p = pads[sel], ni = $('#nameIn');
+  if (document.activeElement !== ni) ni.value = p.name;
+  ni.placeholder = (p.buffer || p.gen) ? 'Имя пэда' : 'Пусто: нажмите Load';
+  paintSliders();
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === p.mode)));
+  document.querySelectorAll('[data-choke]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.choke === p.choke)));
+  document.querySelectorAll('#colorSw button').forEach((b, i) => b.setAttribute('aria-pressed', String(i === p.color)));
+  $('#micTarget').innerHTML = 'Запись пойдёт на пэд <b>' + BANK_L[Math.floor(sel / N)] + String(sel % N + 1).padStart(2, '0') + '</b>' + (p.buffer ? ' (старый звук будет заменён).' : '.');
+  renderLCD();
+}
+
+/* ---------- waveform (LCD) + trim editor ---------- */
+const wave = $('#wave'), wctx = wave.getContext('2d'), trimC = $('#trim'), tctx = trimC.getContext('2d');
+function sizeCanvas(c) {
+  const dpr = window.devicePixelRatio || 1, r = c.getBoundingClientRect();
+  c.width = Math.max(1, Math.round(r.width * dpr)); c.height = Math.max(1, Math.round(r.height * dpr)); dirty = true;
+}
+function paintBars(cx, c, fg, p, v, trimView) {
+  const W = c.width, H = c.height, dpr = window.devicePixelRatio || 1;
+  cx.clearRect(0, 0, W, H); cx.fillStyle = fg; cx.globalAlpha = .35;
+  for (let x = 0; x < W; x += 6 * dpr) cx.fillRect(x, H / 2 - dpr / 2, 3 * dpr, dpr);
+  if (!p.buffer) { cx.globalAlpha = 1; return; }
+  const dur = p.buffer.duration, frac = v ? posOf(v, p) / dur : -1;
+  const step = 3 * dpr, bars = Math.floor(W / step);
+  for (let b = 0; b < bars; b++) {
+    const f = b / bars, idx = Math.min(p.peaks.length - 1, Math.floor(f * p.peaks.length));
+    const h = Math.max(dpr, p.peaks[idx] * H * .46), x = b * step, inside = f >= p.start && f <= p.end;
+    cx.globalAlpha = !inside ? .18 : v ? (f <= frac ? 1 : .5) : .85;
+    cx.fillRect(x, H / 2 - h, 2 * dpr, 2 * h);
+  }
+  cx.globalAlpha = 1;
+  if (v) cx.fillRect(Math.min(W - 2 * dpr, frac * W), 0, 2 * dpr, H);
+  if (trimView) {
+    for (const f of [p.start, p.end]) { const x = f * W; cx.fillStyle = '#ffb02e'; cx.fillRect(x - 2 * dpr, 0, 4 * dpr, H); cx.beginPath(); cx.arc(x, H / 2, 11 * dpr, 0, TAU); cx.fill(); cx.fillStyle = '#1a1205'; cx.fillRect(x - 1.5 * dpr, H / 2 - 5 * dpr, 1.2 * dpr, 10 * dpr); cx.fillRect(x + .4 * dpr, H / 2 - 5 * dpr, 1.2 * dpr, 10 * dpr); }
+  }
+}
+function drawWave() { paintBars(wctx, wave, lcdFg, pads[sel], voices[sel], false); }
+function drawTrim() {
+  if (!trimVisible()) return;
+  const p = pads[sel];
+  paintBars(tctx, trimC, '#f1eee4', p, voices[sel], true);
+  const d = p.buffer ? p.buffer.duration : 0;
+  $('#trS').textContent = 'START ' + (p.start * d).toFixed(2);
+  $('#trE').textContent = 'END ' + (p.end * d).toFixed(2);
+  $('#trL').textContent = 'LEN ' + ((p.end - p.start) * d).toFixed(2);
+}
+const trimVisible = () => curTab === 'trim' && (wideMQ.matches || sheetOpen);
+let trimDrag = null;
+trimC.addEventListener('pointerdown', e => {
+  const p = pads[sel]; if (!p.buffer) return;
+  const r = trimC.getBoundingClientRect(), f = (e.clientX - r.left) / r.width;
+  trimDrag = Math.abs(f - p.start) <= Math.abs(f - p.end) ? 'start' : 'end';
+  trimC.setPointerCapture(e.pointerId); trimMove(e);
+});
+function trimMove(e) {
+  if (!trimDrag) return;
+  const p = pads[sel], r = trimC.getBoundingClientRect(), f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  const gap = Math.max(.01, .03 / Math.max(.5, p.buffer.duration));
+  if (trimDrag === 'start') p.start = Math.min(f, p.end - gap); else p.end = Math.max(f, p.start + gap);
+  applyLive(sel); dirty = true; queueSave(sel);
+}
+trimC.addEventListener('pointermove', trimMove);
+['pointerup', 'pointercancel'].forEach(ev => trimC.addEventListener(ev, () => { trimDrag = null; }));
+$('#trReset').addEventListener('click', () => { const p = pads[sel]; p.start = 0; p.end = 1; applyLive(sel); queueSave(sel); dirty = true; });
+{
+  const b = $('#trPlay'); let on = false;
+  const dn = e => { e.preventDefault(); if (on) return; on = true; press(sel); }, up = () => { if (!on) return; on = false; release(sel); };
+  b.addEventListener('pointerdown', dn); ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, up));
+}
+
+const f2 = n => n.toFixed(2);
+function updateTime() {
+  const p = pads[sel], v = voices[sel];
+  if (!p.buffer) { $('#tEl').textContent = 'T 0.00'; $('#tLen').textContent = 'LEN 0.00'; $('#tRem').textContent = 'REM 0.00'; return; }
+  const r = rateOf(p), s = offOf(p), len = (endOf(p) - s) / r;
+  let el = 0, rem = len;
+  if (v) { const pos = posOf(v, p); el = (pos - s) / r; rem = (endOf(p) - pos) / r; }
+  $('#tEl').textContent = 'T ' + f2(el);
+  $('#tLen').textContent = 'LEN ' + f2(len);
+  $('#tRem').textContent = v && v.src.loop ? 'REM LOOP' : 'REM ' + f2(Math.max(0, rem));
+}
+function frame() {
+  requestAnimationFrame(frame);
+  for (const k in voices) {
+    const g = +k;
+    if (Math.floor(g / N) !== bank) continue;
+    const p = pads[g], v = voices[g]; if (!p.buffer) continue;
+    const s = offOf(p), e = endOf(p);
+    rings[g % N].style.strokeDashoffset = 100 * (1 - (v.src.loop ? 1 : Math.min(1, Math.max(0, (posOf(v, p) - s) / Math.max(.001, e - s)))));
+  }
+  if (micOn) drawMeter();
+  if (!dirty && !voices[sel]) return;
+  dirty = false; drawWave(); drawTrim(); updateTime();
+}
+
+/* app skins (idea borrowed from the earlier build: CSS variables on <html data-skin>) */
+const SKINS = ['base', 'lime', 'orange', 'yellow', 'bamboo', 'onair'];
+const SKIN_NAMES = { base: 'STUDIO', lime: 'LIME CARBON', orange: 'WOOD & ORANGE', yellow: 'YELLOW BLACK', bamboo: 'RED & BAMBOO', onair: 'ON AIR' };
+const SKIN_BG = { base: '#0f1012', lime: '#060706', orange: '#1c1c1e', yellow: '#0f0f0f', bamboo: '#1a0806', onair: '#0b0506' };
+function tgColors(c) {
+  try { const tg = window.Telegram && window.Telegram.WebApp; if (!tg || !tg.initData) return; if (tg.setHeaderColor) tg.setHeaderColor(c); if (tg.setBackgroundColor) tg.setBackgroundColor(c); if (tg.setBottomBarColor) tg.setBottomBarColor(c); } catch (e) {}
+}
+function setSkin(k) {
+  if (!SKINS.includes(k)) k = 'base';
+  document.documentElement.setAttribute('data-skin', k);
+  $('#skinBtn').textContent = 'Skin ' + (SKINS.indexOf(k) + 1);
+  lsSet('pad16r.skin', k);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', SKIN_BG[k]);
+  tgColors(SKIN_BG[k]);
+  lcdFg = getComputedStyle($('#lcd')).color; dirty = true;
+}
+/* LCD theme */
+const THEMES = ['green', 'amber', 'ice'];
+function setTheme(t) {
+  $('#lcd').dataset.lcd = t; lsSet('pad16r.lcd', t);
+  lcdFg = getComputedStyle($('#lcd')).color; dirty = true;
+}
+
+/* ---------- tabs / bottom sheet ---------- */
+function paintTabs() {
+  const wide = wideMQ.matches;
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tab === curTab && (wide || sheetOpen))));
+  document.querySelectorAll('.pane').forEach(p => { p.hidden = p.dataset.pane !== curTab; });
+  $('#sheet').classList.toggle('open', sheetOpen);
+  document.body.classList.toggle('sheet-open', sheetOpen && !wide);
+  dirty = true;
+}
+function setTab(name) {
+  if (!wideMQ.matches && curTab === name && sheetOpen) sheetOpen = false; else { curTab = name; sheetOpen = true; }
+  paintTabs();
+}
+function liveDots() {
+  document.querySelector('[data-tab="rec"]').classList.toggle('live', seq.rec);
+  document.querySelector('[data-tab="mic"]').classList.toggle('live', micOn);
+  renderLCD();
+}
+if (wideMQ.addEventListener) wideMQ.addEventListener('change', paintTabs);
+
+/* ---------- performance recorder (loop of pad hits) ---------- */
+function recEvent(g, d) {
+  if (!seq.rec) return;
+  const now = performance.now();
+  seq.ev.push({ t: seq.len ? (now - seq.t0) % seq.len : now - seq.t0, g, d });
+}
+function seqInfo() {
+  const b = $('#recBtn'), pb = $('#playBtn');
+  b.setAttribute('aria-pressed', String(seq.rec)); pb.setAttribute('aria-pressed', String(seq.play));
+  b.textContent = seq.rec ? '■ Stop rec' : '● Rec';
+  pb.textContent = seq.play ? '■ Stop' : '▶ Play';
+  $('#recInfo').innerHTML = seq.len
+    ? 'Цикл <b>' + (seq.len / 1000).toFixed(1) + ' с</b>, событий: <b>' + seq.ev.length + '</b>' + (seq.rec ? ' · идёт овердаб' : seq.play ? ' · играет' : ' · остановлен')
+    : (seq.rec ? 'Идёт запись… нажмите Stop rec, чтобы замкнуть цикл.' : 'Нажмите Rec, играйте, затем Stop rec — запись зациклится. Rec поверх играющего цикла — овердаб.');
+  liveDots();
+}
+function seqStart() { seq.play = true; seq.t0 = performance.now(); seq.last = -1; }
+function seqStop() { seq.play = false; seq.rec = false; stopAll(); }
+$('#recBtn').addEventListener('click', () => {
+  ensureAudio();
+  if (!seq.rec) {
+    if (!seq.len) { seq.ev = []; seq.t0 = performance.now(); seq.rec = true; seq.play = false; }
+    else { if (!seq.play) seqStart(); seq.rec = true; }
+  } else {
+    if (!seq.len) { seq.len = Math.max(500, performance.now() - seq.t0); seq.ev.sort((a, b) => a.t - b.t); seq.rec = false; seqStart(); }
+    else seq.rec = false;
+    seq.ev.sort((a, b) => a.t - b.t);
+  }
+  seqInfo();
+});
+$('#playBtn').addEventListener('click', () => {
+  ensureAudio();
+  if (!seq.len) { msg('NOTHING RECORDED'); return; }
+  if (seq.play) seqStop(); else seqStart();
+  seqInfo();
+});
+$('#seqClr').addEventListener('click', () => { seqStop(); seq.ev = []; seq.len = 0; seqInfo(); msg('REC CLEARED'); });
+setInterval(() => {
+  if (!seq.play || !seq.len) return;
+  const ph = (performance.now() - seq.t0) % seq.len, last = seq.last;
+  const fire = e => { try { e.d ? press(e.g, true) : release(e.g, true); } catch (err) {} };
+  for (const e of seq.ev) { if (ph >= last ? (e.t > last && e.t <= ph) : (e.t > last || e.t <= ph)) fire(e); }
+  seq.last = ph;
+}, 8);
+
+/* ---------- record the output (mix) ---------- */
+const pickMime = () => (window.MediaRecorder && MediaRecorder.isTypeSupported) ? (['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '') : '';
+const extOf = m => /mp4/.test(m) ? 'm4a' : 'webm';
+let mixRec = null, mixDest = null;
+$('#mixBtn').addEventListener('click', () => {
+  if (mixRec) { mixRec.stop(); return; }
+  if (!window.MediaRecorder || !ensureAudio()) { msg('NO MIX REC', 2200); return; }
+  try {
+    mixDest = ctx.createMediaStreamDestination(); master.connect(mixDest);
+    const mt = pickMime(), chunks = [];
+    const r = mixRec = new MediaRecorder(mixDest.stream, mt ? { mimeType: mt } : undefined);
+    r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    r.onstop = () => {
+      try { master.disconnect(mixDest); } catch (e) {}
+      const type = r.mimeType || mt || 'audio/webm', a = $('#mixLink');
+      a.href = URL.createObjectURL(new Blob(chunks, { type })); a.download = 'pad16-mix.' + extOf(type);
+      a.classList.add('show'); mixRec = null; $('#mixBtn').setAttribute('aria-pressed', 'false'); $('#mixBtn').textContent = '● Rec mix';
+      msg('MIX SAVED');
+    };
+    r.start(); $('#mixBtn').setAttribute('aria-pressed', 'true'); $('#mixBtn').textContent = '■ Stop mix'; $('#mixLink').classList.remove('show');
+  } catch (e) { mixRec = null; msg('NO MIX REC', 2200); }
+});
+
+/* ---------- microphone recording → selected pad ---------- */
+let micStream = null, micRec = null, micAn = null, micSrc = null, micT0 = 0, micTimer = 0, micTarget = 0, micCount = 0;
+const micInfo = t => { $('#micInfo').textContent = t; };
+async function micStart() {
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) || !window.MediaRecorder) { micInfo('Этот браузер не поддерживает запись с микрофона.'); msg('NO MIC SUPPORT', 2500); return; }
+  if (!ensureAudio()) return;
+  try { micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }); }
+  catch (e) { micInfo('Нет доступа к микрофону. Разрешите его в настройках сайта (нужна https-страница).'); msg('MIC DENIED', 2500); return; }
+  micSrc = ctx.createMediaStreamSource(micStream); micAn = ctx.createAnalyser(); micAn.fftSize = 512; micSrc.connect(micAn);
+  const mt = pickMime(), chunks = [];
+  const r = micRec = new MediaRecorder(micStream, mt ? { mimeType: mt } : undefined);
+  r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  r.onstop = async () => {
+    micOn = false; clearTimeout(micTimer);
+    try { micSrc.disconnect(); } catch (e) {}
+    micStream.getTracks().forEach(t => t.stop()); micStream = null; micAn = null;
+    $('#micLvl').style.width = '0'; $('#micBtn').setAttribute('aria-pressed', 'false'); $('#micBtn').textContent = '● Rec mic'; liveDots();
+    try {
+      const raw = await new Blob(chunks, { type: r.mimeType || mt }).arrayBuffer();
+      const buffer = await decode(raw.slice(0));
+      micCount++; setPadAudio(micTarget, { buffer, raw, name: 'MIC ' + micCount });
+      const p = pads[micTarget]; p.mode = 'oneshot'; queueSave(micTarget);
+      msg('MIC → ' + BANK_L[Math.floor(micTarget / N)] + String(micTarget % N + 1).padStart(2, '0'), 2200);
+      micInfo('Готово: запись лежит на пэде. Обрежьте тишину на вкладке TRIM.');
+    } catch (e) { msg('MIC DECODE FAIL', 2500); micInfo('Не удалось прочитать запись.'); }
+  };
+  micTarget = sel; micT0 = performance.now(); micOn = true; r.start();
+  micTimer = setTimeout(() => { if (micRec && micRec.state === 'recording') micRec.stop(); }, 30000);
+  $('#micBtn').setAttribute('aria-pressed', 'true'); $('#micBtn').textContent = '■ Stop'; liveDots();
+}
+function drawMeter() {
+  if (!micAn) return;
+  const d = new Uint8Array(micAn.fftSize); micAn.getByteTimeDomainData(d);
+  let m = 0; for (let i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i] - 128) / 128);
+  $('#micLvl').style.width = Math.min(100, m * 140) + '%';
+  $('#micTime').textContent = ((performance.now() - micT0) / 1000).toFixed(1) + ' s';
+}
+$('#micBtn').addEventListener('click', () => { if (micOn && micRec) micRec.stop(); else micStart(); });
+
+/* ---------- wiring ---------- */
+buildPads();
+const swEl = $('#colorSw');
+LEDS.forEach((c, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.style.setProperty('--c', c); b.setAttribute('aria-label', 'Цвет ' + (i + 1)); b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', () => { pads[sel].color = i; refreshPad(sel); renderSel(); queueSave(sel); });
+  swEl.appendChild(b);
+});
+document.querySelectorAll('[data-bank]').forEach(b => b.addEventListener('click', () => setBank(+b.dataset.bank)));
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { edit('mode', b.dataset.mode); refreshPad(sel); renderSel(); }));
+document.querySelectorAll('[data-choke]').forEach(b => b.addEventListener('click', () => { edit('choke', +b.dataset.choke); renderSel(); }));
+$('#nameIn').addEventListener('input', e => { pads[sel].name = e.target.value; refreshPad(sel); renderLCD(); queueSave(sel); });
+$('#loadBtn').addEventListener('click', () => $('#file').click());
+$('#file').addEventListener('change', e => { loadFiles(e.target.files, sel); e.target.value = ''; });
+$('#clearBtn').addEventListener('click', () => { clearPad(sel); msg('PAD CLEARED'); });
+$('#stopAll').addEventListener('click', () => { stopAll(); if (seq.play) { seq.play = false; seq.rec = false; seqInfo(); } });
+$('#skinBtn').addEventListener('click', () => { const k = SKINS[(SKINS.indexOf(document.documentElement.getAttribute('data-skin') || 'base') + 1) % SKINS.length]; setSkin(k); msg('SKIN: ' + SKIN_NAMES[k], 1500); });
+$('#lcdTheme').addEventListener('click', () => setTheme(THEMES[(THEMES.indexOf($('#lcd').dataset.lcd) + 1) % THEMES.length]));
+$('#fxByp').addEventListener('click', e => { fx.bypass = !fx.bypass; e.currentTarget.setAttribute('aria-pressed', String(fx.bypass)); applyFx(); });
+$('#fxReset').addEventListener('click', () => { Object.assign(fx, { filter: 0, dMix: 0, dTime: 38, rMix: 0 }); applyFx(); saveFx(); paintSliders(); });
+$('#lcd').addEventListener('dragover', e => e.preventDefault());
+$('#lcd').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer && e.dataTransfer.files.length) loadFiles(e.dataTransfer.files, sel); });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+/* iOS: unlock audio on a real gesture (touchend/click) */
+function unlockAudio() {
+  if (!ensureAudio()) return;
+  try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) {}
+}
+['touchend', 'click', 'mousedown'].forEach(ev => window.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
+
+window.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { setBank((bank + (e.code === 'ArrowRight' ? 1 : 3)) % BANKS); e.preventDefault(); return; }
+  if (e.code === 'Escape') { stopAll(); return; }
+  const i = CODES.indexOf(e.code);
+  if (i < 0 || e.repeat || keyDown.has(i)) return;
+  const g = bank * N + i; keyDown.set(i, g);
+  padEls[i].classList.add('down'); press(g); e.preventDefault();
+});
+window.addEventListener('keyup', e => {
+  const i = CODES.indexOf(e.code);
+  if (i < 0 || !keyDown.has(i)) return;
+  const g = keyDown.get(i); keyDown.delete(i);
+  padEls[i].classList.remove('down'); release(g);
+});
+window.addEventListener('blur', () => { keyDown.forEach((g, i) => { padEls[i].classList.remove('down'); release(g); }); keyDown.clear(); });
+
+new ResizeObserver(() => { sizeCanvas(wave); sizeCanvas(trimC); }).observe(document.body);
+new ResizeObserver(() => sizeCanvas(wave)).observe(wave);
+new ResizeObserver(() => sizeCanvas(trimC)).observe(trimC);
+
+/* ---------- start ---------- */
+const th = lsGet('pad16r.lcd');
+setTheme(THEMES.includes(th) ? th : 'green');
+const sk = lsGet('pad16r.skin'); setSkin(SKINS.includes(sk) ? sk : 'base');
+renderPads(); renderSel(); paintTabs(); seqInfo(); sizeCanvas(wave); sizeCanvas(trimC);
+requestAnimationFrame(frame);
+/* ---------- optional real-sound pack: sounds/manifest.json (missing → built-in synth sounds stay) ---------- */
+function padIndex(ref) {
+  if (typeof ref === 'number') return ref;
+  const m = /^([A-Da-d])\s*0?(\d{1,2})$/.exec(String(ref).trim());
+  if (!m || +m[2] < 1 || +m[2] > 16) return -1;
+  return (m[1].toUpperCase().charCodeAt(0) - 65) * 16 + +m[2] - 1;
+}
+async function loadPack() {
+  let list;
+  try { const r = await fetch('sounds/manifest.json', { cache: 'no-cache' }); if (!r.ok) return; const j = await r.json(); list = Array.isArray(j) ? j : (j.pads || []); } catch (e) { return; }
+  let ok = 0;
+  for (const e of list) {
+    const g = padIndex(e.pad), p = pads[g];
+    if (!p || !e.file || p.demo === null) continue;            /* the user's own sound stays */
+    try {
+      const r = await fetch('sounds/' + encodeURIComponent(e.file).replace(/%2F/g, '/')); if (!r.ok) continue;
+      const buffer = await decode((await r.arrayBuffer()).slice(0));
+      stopVoice(g); p.gen = null; p.buffer = buffer; p.peaks = computePeaks(buffer);
+      if (!restoredKeys.has(g)) {                               /* keep params the user already edited */
+        p.name = String(e.name || e.file.replace(/\.[^.]+$/, '')).slice(0, 16);
+        if (e.mode) p.mode = e.mode; if (e.vol != null) p.vol = e.vol; if (e.choke != null) p.choke = e.choke; if (e.color != null) p.color = e.color;
+        p.start = 0; p.end = 1;
+      }
+      refreshPad(g); if (g === sel) renderSel(); ok++;
+    } catch (err) {}
+  }
+  if (ok) msg('PACK ' + ok + ' LOADED', 1800);
+}
+
+/* ---------- Telegram Mini App (optional; does nothing in a normal browser) ---------- */
+function initTelegram() {
+  try {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg || (!tg.initData && tg.platform === 'unknown')) return;
+    document.documentElement.classList.add('tg');
+    tg.ready(); tg.expand();
+    if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();   /* a swipe down on the pads must not close the app */
+    tgColors(SKIN_BG[document.documentElement.getAttribute('data-skin') || 'base']);
+  } catch (e) {}
+}
+try { const s = document.createElement('script'); s.src = 'https://telegram.org/js/telegram-web-app.js'; s.async = true; s.onload = initTelegram; document.head.appendChild(s); } catch (e) {}
+
+/* keep audio + screen alive when the app returns from background */
+let wake = null;
+const keepAwake = async () => { try { if (navigator.wakeLock && !document.hidden) wake = await navigator.wakeLock.request('screen'); } catch (e) {} };
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (ctx && ctx.state !== 'running') { try { ctx.resume().catch(() => {}); } catch (e) {} }
+  keepAwake();
+});
+window.addEventListener('pointerdown', () => { if (!wake) keepAwake(); }, { once: true });
+
+restore().catch(() => {}).then(loadPack).catch(() => {}).then(buildQueue);
+
+})();
+</script>
+</body></html>
